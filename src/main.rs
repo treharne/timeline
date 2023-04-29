@@ -1,4 +1,5 @@
 
+use colors::get_color;
 use serde::{Deserialize, Serialize};
 use yew::{prelude::*};
 
@@ -8,9 +9,13 @@ use web_sys::{DragEvent};
 mod line_components;
 use crate::line_components::RunComponent;
 
+mod colors;
+use crate::colors::PALETTES;
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 struct Run {
     items: Vec<RunItem>,
+    color: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -55,7 +60,8 @@ fn new_items() -> Vec<RunItem> {
 }
 
 fn new_runs() -> Vec<Run> {
-    (1..=3).map(|_| Run { items: new_items() }).collect()
+    let n = 10;
+    (0..n).map(|i| Run { items: new_items(), color: get_color(i, n) }).collect()
 }
 fn move_job(from_pos: Position, to_pos: Position, state: &mut AppState) {
     // order is important for:
@@ -169,8 +175,10 @@ impl Component for App {
         html! {
             <>
                 { for self.state.runs.iter().enumerate().map(move|(run_idx, run)| html! {
-                    <RunComponent run_idx={run_idx}
+                    <RunComponent 
+                        run_idx={run_idx}
                         run_items={run.items.clone()}
+                        color={run.color.clone()}
                         drag_start={&drag_start}
                         drag_over={&drag_over}
                         drag_leave={&drag_leave}

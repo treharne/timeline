@@ -94,6 +94,7 @@ fn to_style(styles: Vec<&str>) -> String {
 pub struct RunProps {
     pub run_idx: RunIdx,
     pub run_items: Vec<crate::RunItem>,
+    pub color: String,
     pub drag_start: Callback<(DragEvent, Position)>,
     pub drag_over: Callback<(DragEvent, Position)>,
     pub drag_leave: Callback<(DragEvent, Position)>,
@@ -127,7 +128,7 @@ fn render_run_item(pos: Position, item: &crate::RunItem, run_props: &RunProps) -
             html! {
                 <LegComponent
                     pos={ pos }
-                    color={ "#ff804d".to_string() }
+                    color={ run_props.color.clone() }
                     duration={3}
                     drag_over={ &drag_over }
                     drag_leave={ &drag_leave}
@@ -140,11 +141,10 @@ fn render_run_item(pos: Position, item: &crate::RunItem, run_props: &RunProps) -
 
 #[function_component(RunComponent)]
 pub fn run(props: &RunProps) -> Html {
-    let RunProps { run_idx, run_items, drag_start, drag_over, drag_leave, drop } = props;
     html! {
         <div class="run">
-            { for run_items.iter().enumerate().map(|(item_idx, item)| {
-                let pos = Position { run_idx: *run_idx, item_idx };
+            { for props.run_items.iter().enumerate().map(|(item_idx, item)| {
+                let pos = Position { run_idx: props.run_idx, item_idx };
                 render_run_item(pos, item, props)
             }) }
         </div>
