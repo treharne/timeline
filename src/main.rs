@@ -3,8 +3,7 @@ use serde::{Deserialize, Serialize};
 use yew::{prelude::*};
 
 use gloo_storage::{Storage, LocalStorage};
-use web_sys::DragEvent;
-
+use web_sys::{DragEvent};
 
 mod line_components;
 use crate::line_components::RunComponent;
@@ -100,6 +99,15 @@ pub struct App {
     drag_item_index: Option<Position>,
 }
 
+// fn set_pos_draggable(pos: &Position, draggable: bool) {
+//     let item_id = make_item_id(pos);
+//     if let Some(element) = document().get_element_by_id(&item_id) {
+//         if let Some(html_element) = element.dyn_ref::<HtmlElement>() {
+//             html_element.set_draggable(draggable);
+//         }
+//     }
+// }
+
 impl Component for App {
     type Message = Msg;
     type Properties = ();
@@ -129,23 +137,11 @@ impl Component for App {
                 return true;
             }
 
-            Msg::DragOver(pos) => {
+            Msg::DragOver(_pos) => {
                 return false;
-                // use gloo_utils::document;
-                // if let Some(element) = document().get_element_by_id(&format!("item-{}", pos)) {
-                    //     if let Some(html_element) = element.dyn_ref::<HtmlElement>() {
-                //         html_element.set_draggable(false);
-                //     }
-                // }
             }
-            Msg::DragLeave(index) => {
+            Msg::DragLeave(_pos) => {
                 return false;
-                // use gloo_utils::document;
-                // if let Some(element) = document().get_element_by_id(&format!("item-{}", index)) {
-                //     if let Some(html_element) = element.dyn_ref::<HtmlElement>() {
-                    //         html_element.set_draggable(true);
-                //     }
-                // }
             }
             Msg::Reset => {
                 self.state.runs = new_runs();

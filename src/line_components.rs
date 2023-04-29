@@ -14,14 +14,23 @@ pub struct JobProps {
     pub drop: Callback<DragEvent>,
 }
 
+pub fn make_item_id(pos: &Position) -> String {
+    // creates an id for an item based on its position only
+    // so get_element_by_id can be used while dragging.
+    format!("item-run{}-seq{}", pos.run_idx, pos.item_idx)
+}
+
 #[function_component(JobComponent)]
 pub fn job(props: &JobProps) -> Html {
     let JobProps { pos, label, color, duration, drag_start, drag_over, drag_leave, drop } = props;
     let style = to_style(vec![&border(color), &width(*duration)]);
     html! {
         <div
+            // `id` changes when the position changes,
+            // you cannot use it as a permanent reference for this job.
+            id={ make_item_id(pos) }
             uid={ label.clone() }
-            class="item"
+            class="job"
             draggable={ "true" }
             ondragstart={ drag_start }
             ondragover={ drag_over }
@@ -50,8 +59,10 @@ pub fn leg(props: &LegProps) -> Html {
     let style = to_style(vec![&bg(color), &width(*duration)]);
     html! {
         <div
-            // id={format!("item-{}", index)}
-            class="placeholder"
+            // `id` changes when the position changes,
+            // you cannot use it as a permanent reference for this leg.
+            id={ make_item_id(pos) }
+            class="leg"
             ondragover={ drag_over }
             ondrop={ drop }
             ondragleave={ drag_leave }
