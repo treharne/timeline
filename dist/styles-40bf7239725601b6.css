@@ -1,0 +1,35 @@
+.run {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    /* gap: 8px; */
+    /* flex-direction: column; */
+    /* gap: 1rem; */
+    /* max-width: 250px; */
+    max-width: 100%;
+    margin: 2rem auto;
+}
+
+.item {
+    padding: 1rem;
+    height: 1rem;
+    background-color: white;
+    /* border: 1px solid; */
+    cursor: grab;
+}
+
+.item:active {
+    cursor: grabbing;
+}
+
+.placeholder {
+    /* padding: 0 1rem; */
+    border-top: 1rem solid white;
+    border-bottom: 1rem solid white;
+    /* margin-top: 0.6rem;
+    margin-bottom: 0.6rem; */
+    background-color: #ff804d;
+    /* width: 30px; */
+    height: 1rem;
+}
