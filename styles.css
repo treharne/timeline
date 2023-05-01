@@ -29,6 +29,10 @@ body {
     height: 1rem;
     background-color: white;
     cursor: grab;
+/* 
+    animation : slide 0.2s;
+    animation-iteration-count : 1;
+    animation-fill-mode: forwards; */
 }
 
 
@@ -49,8 +53,19 @@ body {
     to {transform: translateX(50px);}
 }
 
+@keyframes slide_back {
+    from {transform: translateX(50px);}
+    to {transform: translateX(0px);}
+}
+
 .push {
     animation : slide 0.2s;
+    animation-iteration-count : 1;
+    animation-fill-mode: forwards;
+}
+
+.unpush {
+    animation : slide_back 0.2s;
     animation-iteration-count : 1;
     animation-fill-mode: forwards;
 }

@@ -1,6 +1,7 @@
 
 use animations::{push_subsequent_jobs, toggle_visible};
 use gloo_utils::document;
+use gloo_console::log;
 use line_components::{make_item_id, make_run_id};
 use serde::{Deserialize, Serialize};
 use yew::{prelude::*};
@@ -83,7 +84,7 @@ pub enum Msg {
 }
 
 fn new_jobs(color: &str) -> Vec<Job> {
-    let n = 10;
+    let n = 20;
     (0..n)
         .map(|n| Job{
             uid: format!("Job {}", n),
@@ -93,7 +94,7 @@ fn new_jobs(color: &str) -> Vec<Job> {
 }
 
 fn new_runs() -> Vec<Run> {
-    let n = 10;
+    let n = 20;
     (0..n).map(|i| {
         let jobs = new_jobs(&get_color(i, n));
         Run { jobs: jobs, color: get_color(i, n), start_time: 0, end_time: 8 * 60 }}
@@ -104,7 +105,7 @@ fn new_runs() -> Vec<Run> {
 pub struct App {
     state: AppState,
     drag_from_pos: Option<Position>,
-    already_dragging: bool,
+    dragging_over_pos: Option<Position>,
 }
 
 // fn set_pos_draggable(pos: &Position, draggable: bool) {
@@ -130,7 +131,7 @@ impl Component for App {
         App {
             state,
             drag_from_pos: None,
-            already_dragging: false,
+            dragging_over_pos: None,
         }
     }
 
@@ -138,6 +139,7 @@ impl Component for App {
         match msg {
             Msg::DragStart(pos) => {
                 self.drag_from_pos = Some(pos);
+                self.dragging_over_pos = Some(pos);
                 toggle_visible(&pos, false);
             }
             Msg::Drop(to_pos) => {
@@ -151,25 +153,54 @@ impl Component for App {
                     Some(pos) => toggle_visible(&pos, true),
                     None => (),
                 }
-
+                
                 LocalStorage::set("timeline_state", &self.state).unwrap();
-
+                
+                self.dragging_over_pos = None;
                 self.drag_from_pos = None;
                 return true;
             }
 
             Msg::DragOver(pos) => {
-                if self.already_dragging { return false };
-
-                self.already_dragging = true;
-                push_subsequent_jobs(&pos, true);
                 
-                // push_subsequent_jobs(&self.drag_from_pos, true);
+                match self.dragging_over_pos {
+                    Some(dragging_over_pos) => {
+                        if pos == dragging_over_pos {
+                            // still over the same item
+                            // This early return MASSIVELY improves performance
+                            return false
+                        } else if dragging_over_pos.run_idx == pos.run_idx {
+                            // over the same run
+                            push_subsequent_jobs(&pos, true);
+                        } else {
+                            // over a different run
+                            let prev_pos = Position::new(dragging_over_pos.run_idx, 0);
+                            push_subsequent_jobs(&prev_pos, false);
+                            push_subsequent_jobs(&pos, true);
+                        }},
+                    None => {
+                        // new run
+                        push_subsequent_jobs(&pos, true);
+                    }
+                }
+
+                self.dragging_over_pos = Some(pos);
                 return true;
             }
             Msg::DragLeave(pos) => {
-                self.already_dragging = false;
-                push_subsequent_jobs(&pos, false);
+                log!(format!("Drag Leave {:?}", pos));
+                // match self.dragging_over_run {
+                //     Some(run_idx) => if run_idx == pos.run_idx {
+                //         // over the same run
+                //     },
+                //     None => {
+                //         // left run
+                //         let pos = Position::new(pos.run_idx, 0);
+                //         push_subsequent_jobs(&pos, false);
+                //     }
+                // }
+                // self.dragging_over_run = Some(pos.run_idx);
+                // push_subsequent_jobs(&pos, false);
                 return true;
             }
             Msg::Reset => {
