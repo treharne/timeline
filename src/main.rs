@@ -26,6 +26,7 @@ pub struct Run {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Job {
     pub uid: String,
+    pub color: String,
     pub location: Location,
 }
 
@@ -67,18 +68,19 @@ pub enum Msg {
     Reset,
 }
 
-fn new_jobs() -> Vec<Job> {
+fn new_jobs(color: &str) -> Vec<Job> {
     let n = 10;
     (0..n)
         .map(|n| Job{
             uid: format!("Job {}", n),
+            color: color.to_string(),
             location: Location::new_random(),
         }).collect()
 }
 
 fn new_runs() -> Vec<Run> {
     let n = 10;
-    (0..n).map(|i| Run { jobs: new_jobs(), color: get_color(i, n) }).collect()
+    (0..n).map(|i| Run { jobs: new_jobs(&get_color(i, n)), color: get_color(i, n) }).collect()
 }
 
 

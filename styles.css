@@ -1,3 +1,8 @@
+body {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: small;
+}
+
 .run {
     display: flex;
     flex-direction: row;

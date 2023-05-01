@@ -2,11 +2,6 @@ use crate::{Position, AppState, ItemIdx};
 use gloo_console::log;
 
 pub fn move_job(from_pos: Position, to_pos: Position, state: &mut AppState) {
-    // order is important for:
-    // - adding to to_item_idx must be done before subtracting -> usize can't be negative
-    // - removing from run.items must be done before inserting -> if it's the same run, the indexes move
-    // - removing Job then Leg must be done before inserting Leg then Job
-
     log!(format!("Moving job from {:?} to {:?}", from_pos, to_pos));
     
     let runs = &mut state.runs;

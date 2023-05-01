@@ -67,14 +67,13 @@ pub fn leg(props: &LegProps) -> Html {
             ondrop={ drop }
             ondragleave={ drag_leave }
             style={ style }
-        >
-        { " " }
-        </div>
+        />
     }
 }
 
 fn border(color: &str) -> String {
-    format!("border: 2px solid {color}")
+    // format!("border: 2px solid {color}")
+    format!("box-shadow:inset 0px 0px 0px 3px {color}")
 }
 
 fn bg(color: &str) -> String {
@@ -113,7 +112,7 @@ fn render_job(pos: Position, job: &Job, run_props: &RunProps) -> Html {
         <JobComponent
             pos={ pos.clone() }
             label={ job.uid.clone() }
-            color={ run_props.color.clone() }
+            color={ job.color.clone() }
             duration={ 1.0 }
             drag_start={ &drag_start }
             drag_over={ &drag_over }
