@@ -1,4 +1,5 @@
-use crate::{Position, Run, RunItem, AppState};
+use crate::{Position, AppState, ItemIdx};
+use gloo_console::log;
 
 pub fn move_job(from_pos: Position, to_pos: Position, state: &mut AppState) {
     // order is important for:
@@ -6,47 +7,33 @@ pub fn move_job(from_pos: Position, to_pos: Position, state: &mut AppState) {
     // - removing from run.items must be done before inserting -> if it's the same run, the indexes move
     // - removing Job then Leg must be done before inserting Leg then Job
 
-    gloo_console::log!(format!("Moving job from {:?} to {:?}", from_pos, to_pos));
+    log!(format!("Moving job from {:?} to {:?}", from_pos, to_pos));
     
     let runs = &mut state.runs;
-    let modified_to_pos = calculate_modified_to_pos(&from_pos, &to_pos, &runs);
     let from_run = runs.get_mut(from_pos.run_idx).unwrap();
     
-    let job = from_run.items.remove(from_pos.item_idx);
-    let leg = from_run.items.remove(from_pos.item_idx);
-
+    let from_job_seq = from_pos.left_job_seq().unwrap();
+    let job = from_run.jobs.remove(from_job_seq);
+    
     let to_run = if from_pos.run_idx == to_pos.run_idx {
-        gloo_console::log!(format!("Moving to same run"));
+        log!(format!("Moving to same run"));
         from_run
     } else {
         runs.get_mut(to_pos.run_idx).unwrap()
     };
-
-    gloo_console::log!(format!("Moving job from_pos.item_idx {:?} modified_to_pos.item_idx {:?}", from_pos.item_idx, modified_to_pos.item_idx));
-    to_run.items.insert(modified_to_pos.item_idx, leg);
-    to_run.items.insert(modified_to_pos.item_idx, job);
+    
+    let insert_idx = calc_insertion_idx(&from_pos, &to_pos);
+    log!(format!("Moving job from_job_seq {:?} insert_seq {:?}", from_job_seq, insert_idx));
+    to_run.jobs.insert(insert_idx, job);
 }
 
 
-fn calculate_modified_to_pos(from_pos: &Position, to_pos: &Position, runs: &Vec<Run>) -> Position {
-    let mut offset: isize = 0;
-    
-    if from_pos.run_idx == to_pos.run_idx {
-        let move_earlier = to_pos.item_idx < from_pos.item_idx;
-        offset += if move_earlier { 2 } else { 0 };
-    } else {
-        offset += 2;
-    };
-    
-    let to_run = runs.get(to_pos.run_idx).unwrap();
-    let dropped_onto = to_run.items.get(to_pos.item_idx).unwrap();
-    offset -= match dropped_onto {
-        RunItem::Leg{..} => 1,
-        _ => 0,
-    };
+fn calc_insertion_idx(from_pos: &Position, to_pos: &Position) -> ItemIdx {
+    let later_in_same_run = (from_pos.run_idx == to_pos.run_idx) 
+                                && (from_pos.item_idx < to_pos.item_idx);
 
-    Position::new(
-        to_pos.run_idx, 
-        to_pos.item_idx.wrapping_add_signed(offset),
-    )
+    match to_pos.left_job_seq() {
+        Some(seq) => if later_in_same_run { seq } else { seq + 1 },
+        None => 0,
+    }
 }

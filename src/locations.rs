@@ -1,6 +1,8 @@
 use rand;
 use serde::{Deserialize, Serialize};
 
+use crate::Job;
+
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct Location {
     pub lat: f32,
@@ -31,3 +33,6 @@ pub fn haversine_dist(loc1: &Location, loc2: &Location) -> f32 {
     R * c
 }
 
+pub fn driving_time(job1: &Job, job2: &Job) -> f32 {
+    haversine_dist(&job1.location, &job2.location) / 60.0
+}
