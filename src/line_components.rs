@@ -1,6 +1,6 @@
 use yew::prelude::*;
-
-use crate::{Position, RunIdx};
+use gloo_console::log;
+use crate::{Position, RunIdx, Job, locations::driving_time};
 
 #[derive(Properties, PartialEq)]
 pub struct JobProps {
@@ -28,7 +28,7 @@ pub fn job(props: &JobProps) -> Html {
         <div
             // `id` changes when the position changes,
             // you cannot use it as a permanent reference for this job.
-            id={ make_item_id(pos) }
+            // id={ make_item_id(pos) }
             uid={ label.clone() }
             class="job"
             draggable={ "true" }
@@ -61,7 +61,7 @@ pub fn leg(props: &LegProps) -> Html {
         <div
             // `id` changes when the position changes,
             // you cannot use it as a permanent reference for this leg.
-            id={ make_item_id(pos) }
+            // id={ make_item_id(pos) }
             class="leg"
             ondragover={ drag_over }
             ondrop={ drop }
@@ -72,7 +72,6 @@ pub fn leg(props: &LegProps) -> Html {
         </div>
     }
 }
-
 
 fn border(color: &str) -> String {
     format!("border: 2px solid {color}")
@@ -94,7 +93,7 @@ fn to_style(styles: Vec<&str>) -> String {
 #[derive(Properties, PartialEq)]
 pub struct RunProps {
     pub run_idx: RunIdx,
-    pub run_items: Vec<crate::RunItem>,
+    pub jobs: Vec<Job>,
     pub color: String,
     pub drag_start: Callback<(DragEvent, Position)>,
     pub drag_over: Callback<(DragEvent, Position)>,
@@ -104,50 +103,88 @@ pub struct RunProps {
 }
 
 
-fn render_run_item(pos: Position, item: &crate::RunItem, run_props: &RunProps) -> Html {
+fn render_job(pos: Position, job: &Job, run_props: &RunProps) -> Html {
     let drag_start = run_props.drag_start.reform(move |drag_event| (drag_event, pos));
     let drag_over = run_props.drag_over.reform(move |drag_event| (drag_event, pos));
     let drag_leave = run_props.drag_leave.reform(move |drag_event| (drag_event, pos));
     let drop = run_props.drop.reform(move |drag_event| (drag_event, pos));
 
-    match item {
-        crate::RunItem::Job(job) => {
-            html! {
-                <JobComponent
-                    pos={ pos }
-                    label={ job.uid.clone() }
-                    color={ "#34495e".to_string() }
-                    duration={ 1.0 }
-                    drag_start={ &drag_start }
-                    drag_over={ &drag_over }
-                    drag_leave={ &drag_leave }
-                    drop={ &drop }
-                />
-            }
-        }
-        crate::RunItem::Leg(leg) => {
-            html! {
-                <LegComponent
-                    pos={ pos }
-                    color={ run_props.color.clone() }
-                    duration={ leg.duration }
-                    drag_over={ &drag_over }
-                    drag_leave={ &drag_leave }
-                    drop={ &drop }
-                />
-            }
-        }
+    html! {
+        <JobComponent
+            pos={ pos.clone() }
+            label={ job.uid.clone() }
+            color={ run_props.color.clone() }
+            duration={ 1.0 }
+            drag_start={ &drag_start }
+            drag_over={ &drag_over }
+            drag_leave={ &drag_leave }
+            drop={ &drop }
+        />
     }
 }
+
+
+fn render_leg(pos: Position, duration: f32, run_props: &RunProps) -> Html {
+    let drag_over = run_props.drag_over.reform(move |drag_event| (drag_event, pos));
+    let drag_leave = run_props.drag_leave.reform(move |drag_event| (drag_event, pos));
+    let drop = run_props.drop.reform(move |drag_event| (drag_event, pos));
+
+    html! {
+        <LegComponent
+            pos={ pos.clone() }
+            color={ run_props.color.clone() }
+            duration={ duration }
+            drag_over={ &drag_over }
+            drag_leave={ &drag_leave }
+            drop={ &drop }
+        />
+    }
+}
+
+fn construct_run_elements(run_props: &RunProps) -> Vec<yew::virtual_dom::VNode> {
+    let mut items = vec![];
+    let run_idx = run_props.run_idx;
+    
+    let mut item_idx = 0;
+    let pos = Position { run_idx, item_idx};
+    let first_leg = render_leg(pos, 5.0, run_props);
+    items.push(first_leg);
+
+
+    let mut prev_job: Option<&Job> = None;
+    for job in run_props.jobs.iter() {
+        if prev_job.is_none() {
+            item_idx += 1;
+            let pos = Position{ run_idx, item_idx};
+            items.push(render_job(pos, &job, run_props));
+            prev_job = Some(job);
+            continue
+        }
+
+        let leg_duration = driving_time(prev_job.unwrap(), job);
+        
+        item_idx += 1;
+        let pos = Position { run_idx, item_idx };
+        items.push(render_leg(pos, leg_duration, run_props));
+        
+        item_idx += 1;
+        let pos = Position { run_idx, item_idx };
+        items.push(render_job(pos, &job, run_props));
+    }
+
+    item_idx += 1;
+    let pos = Position { run_idx, item_idx };
+    let last_leg = render_leg(pos, 5.0, run_props);
+    items.push(last_leg);
+    items
+}    
+
 
 #[function_component(RunComponent)]
 pub fn run(props: &RunProps) -> Html {
     html! {
         <div class="run">
-            { for props.run_items.iter().enumerate().map(|(item_idx, item)| {
-                let pos = Position { run_idx: props.run_idx, item_idx };
-                render_run_item(pos, item, props)
-            }) }
+            { for construct_run_elements(props) }
         </div>
     }
 }

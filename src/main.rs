@@ -12,14 +12,14 @@ mod colors;
 use colors::get_color;
 
 mod locations;
-use locations::{Location, haversine_dist};
+use locations::Location;
 
 mod dnd;
-use dnd::{move_job};
+use dnd::move_job;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Run {
-    pub items: Vec<RunItem>,
+    pub jobs: Vec<Job>,
     pub color: String,
 }
 
@@ -29,30 +29,10 @@ pub struct Job {
     pub location: Location,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct Leg {
-    pub duration: f32,
-}
-
-impl Leg {
-    fn new_between(job1: &Job, job2: &Job) -> Self {
-        Self {
-            duration: haversine_dist(&job1.location, &job2.location) / 60.0,
-        }
-    }
-}
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct AppState {
     pub runs: Vec<Run>
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub enum RunItem {
-    // Job{uid: String, location: Location},
-    // Leg{duration: f32},
-    Job(Job),
-    Leg(Leg),
 }
 
 type RunIdx = usize;
@@ -68,6 +48,15 @@ impl Position {
     pub fn new(run_idx: RunIdx, item_idx: ItemIdx) -> Self {
         Self {run_idx, item_idx}
     }
+
+    pub fn left_job_seq(&self) -> Option<usize> {
+        if self.item_idx <= 0 {
+            // There is no Job to the left of the first leg
+            return None
+        }
+        Some((self.item_idx - 1) / 2)
+    }
+
 }
 
 pub enum Msg {
@@ -78,38 +67,18 @@ pub enum Msg {
     Reset,
 }
 
-fn new_items() -> Vec<RunItem> {
+fn new_jobs() -> Vec<Job> {
     let n = 10;
-    let jobs = (1..=n).map(|n| {
-        Job{
+    (0..n)
+        .map(|n| Job{
             uid: format!("Job {}", n),
             location: Location::new_random(),
-        }
-    });
-
-    let mut items: Vec<RunItem> = Vec::with_capacity(2 * n);
-    let first_leg = Leg{duration: 5.0};
-    items.push(RunItem::Leg(first_leg));
-
-    let mut prev_job: Option<Job> = None;
-    for job in jobs {
-        if let Some(prev_job) = prev_job {
-            let leg = Leg::new_between(&prev_job, &job);
-            items.push(RunItem::Leg(leg));
-        } 
-        items.push(RunItem::Job(job.clone()));
-        prev_job = Some(job);
-
-    }
-
-    let last_leg = Leg{duration: 5.0};
-    items.push(RunItem::Leg(last_leg));
-    items
+        }).collect()
 }
 
 fn new_runs() -> Vec<Run> {
     let n = 10;
-    (0..n).map(|i| Run { items: new_items(), color: get_color(i, n) }).collect()
+    (0..n).map(|i| Run { jobs: new_jobs(), color: get_color(i, n) }).collect()
 }
 
 
@@ -190,7 +159,7 @@ impl Component for App {
                 { for self.state.runs.iter().enumerate().map(move|(run_idx, run)| html! {
                     <RunComponent 
                         run_idx={run_idx}
-                        run_items={run.items.clone()}
+                        jobs={run.jobs.clone()}
                         color={run.color.clone()}
                         drag_start={&drag_start}
                         drag_over={&drag_over}
