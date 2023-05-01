@@ -1,5 +1,4 @@
 
-use colors::get_color;
 use serde::{Deserialize, Serialize};
 use yew::{prelude::*};
 
@@ -10,23 +9,50 @@ mod line_components;
 use crate::line_components::RunComponent;
 
 mod colors;
-use crate::colors::PALETTES;
+use colors::get_color;
+
+mod locations;
+use locations::{Location, haversine_dist};
+
+mod dnd;
+use dnd::{move_job};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-struct Run {
-    items: Vec<RunItem>,
-    color: String,
+pub struct Run {
+    pub items: Vec<RunItem>,
+    pub color: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-struct AppState {
-    runs: Vec<Run>
+pub struct Job {
+    pub uid: String,
+    pub location: Location,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct Leg {
+    pub duration: f32,
+}
+
+impl Leg {
+    fn new_between(job1: &Job, job2: &Job) -> Self {
+        Self {
+            duration: haversine_dist(&job1.location, &job2.location) / 60.0,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct AppState {
+    pub runs: Vec<Run>
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum RunItem {
-    Job(String),
-    Leg,
+    // Job{uid: String, location: Location},
+    // Leg{duration: f32},
+    Job(Job),
+    Leg(Leg),
 }
 
 type RunIdx = usize;
@@ -53,9 +79,31 @@ pub enum Msg {
 }
 
 fn new_items() -> Vec<RunItem> {
-    let mut items = vec![RunItem::Leg];
-    let others: Vec<_> = (1..=10).map(|n| [RunItem::Job(format!("Box {}", n)), RunItem::Leg]).flatten().collect();
-    items.extend(others);
+    let n = 10;
+    let jobs = (1..=n).map(|n| {
+        Job{
+            uid: format!("Job {}", n),
+            location: Location::new_random(),
+        }
+    });
+
+    let mut items: Vec<RunItem> = Vec::with_capacity(2 * n);
+    let first_leg = Leg{duration: 5.0};
+    items.push(RunItem::Leg(first_leg));
+
+    let mut prev_job: Option<Job> = None;
+    for job in jobs {
+        if let Some(prev_job) = prev_job {
+            let leg = Leg::new_between(&prev_job, &job);
+            items.push(RunItem::Leg(leg));
+        } 
+        items.push(RunItem::Job(job.clone()));
+        prev_job = Some(job);
+
+    }
+
+    let last_leg = Leg{duration: 5.0};
+    items.push(RunItem::Leg(last_leg));
     items
 }
 
@@ -63,42 +111,7 @@ fn new_runs() -> Vec<Run> {
     let n = 10;
     (0..n).map(|i| Run { items: new_items(), color: get_color(i, n) }).collect()
 }
-fn move_job(from_pos: Position, to_pos: Position, state: &mut AppState) {
-    // order is important for:
-    // - adding to to_item_idx must be done before subtracting -> usize can't be negative
-    // - removing from run.items must be done before inserting -> if it's the same run, the indexes move
-    // - removing Job then Leg must be done before inserting Leg then Job
 
-    gloo_console::log!(format!("Moving job from {:?} to {:?}", from_pos, to_pos));
-    let from_item_idx = from_pos.item_idx;
-    let mut to_item_idx = to_pos.item_idx;
-        
-    let runs = &mut state.runs;
-    let from_run = runs.get_mut(from_pos.run_idx).unwrap();
-    
-    let job = from_run.items.remove(from_item_idx);
-    let leg = from_run.items.remove(from_item_idx);
-
-    let to_run = if from_pos.run_idx == to_pos.run_idx {
-        let move_earlier = to_item_idx < from_item_idx;
-        to_item_idx += if move_earlier { 2 } else { 0 };
-        gloo_console::log!(format!("Moving to same run"));
-        from_run
-    } else {
-        to_item_idx += 2;
-        runs.get_mut(to_pos.run_idx).unwrap()
-    };
-
-    let dropped_onto = to_run.items.get(to_pos.item_idx).unwrap();
-    to_item_idx -= match dropped_onto {
-        RunItem::Leg => 1,
-        RunItem::Job(_) => 0,
-    };
-
-    gloo_console::log!(format!("Moving job from_item_idx {:?} to_item_idx {:?}", from_item_idx, to_item_idx));
-    to_run.items.insert(to_item_idx, leg);
-    to_run.items.insert(to_item_idx, job);
-}
 
 pub struct App {
     state: AppState,

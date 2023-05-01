@@ -7,7 +7,7 @@ pub struct JobProps {
     pub pos: Position,
     pub label: String,
     pub color: String,
-    pub duration: u32,
+    pub duration: f32,
     pub drag_start: Callback<DragEvent>,
     pub drag_over: Callback<DragEvent>,
     pub drag_leave: Callback<DragEvent>,
@@ -47,7 +47,7 @@ pub fn job(props: &JobProps) -> Html {
 pub struct LegProps {
     pub pos: Position,
     pub color: String,
-    pub duration: u32,
+    pub duration: f32,
     pub drag_over: Callback<DragEvent>,
     pub drag_leave: Callback<DragEvent>,
     pub drop: Callback<DragEvent>,
@@ -82,8 +82,9 @@ fn bg(color: &str) -> String {
     format!("background-color: {}", color)
 }
 
-fn width(duration: u32) -> String {
-    format!("width: {}px", duration * 10)
+fn width(duration: f32) -> String {
+    let width = (duration * 30.0).round() as u32;
+    format!("width: {}px", width)
 }
 
 fn to_style(styles: Vec<&str>) -> String {
@@ -110,28 +111,28 @@ fn render_run_item(pos: Position, item: &crate::RunItem, run_props: &RunProps) -
     let drop = run_props.drop.reform(move |drag_event| (drag_event, pos));
 
     match item {
-        crate::RunItem::Job(job_str) => {
+        crate::RunItem::Job(job) => {
             html! {
                 <JobComponent
                     pos={ pos }
-                    label={ job_str.clone() }
+                    label={ job.uid.clone() }
                     color={ "#34495e".to_string() }
-                    duration={4}
+                    duration={ 1.0 }
                     drag_start={ &drag_start }
                     drag_over={ &drag_over }
-                    drag_leave={ &drag_leave}
+                    drag_leave={ &drag_leave }
                     drop={ &drop }
                 />
             }
         }
-        crate::RunItem::Leg => {
+        crate::RunItem::Leg(leg) => {
             html! {
                 <LegComponent
                     pos={ pos }
                     color={ run_props.color.clone() }
-                    duration={3}
+                    duration={ leg.duration }
                     drag_over={ &drag_over }
-                    drag_leave={ &drag_leave}
+                    drag_leave={ &drag_leave }
                     drop={ &drop }
                 />
             }
