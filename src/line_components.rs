@@ -20,6 +20,10 @@ pub fn make_item_id(pos: &Position) -> String {
     format!("item-run{}-seq{}", pos.run_idx, pos.item_idx)
 }
 
+pub fn make_run_id(run_idx: RunIdx) -> String {
+    format!("run{}", run_idx)
+}
+
 #[function_component(JobComponent)]
 pub fn job(props: &JobProps) -> Html {
     let JobProps { pos, label, color, duration, drag_start, drag_over, drag_leave, drop } = props;
@@ -28,7 +32,7 @@ pub fn job(props: &JobProps) -> Html {
         <div
             // `id` changes when the position changes,
             // you cannot use it as a permanent reference for this job.
-            // id={ make_item_id(pos) }
+            id={ make_item_id(pos) }
             uid={ label.clone() }
             class="job"
             draggable={ "true" }
@@ -61,7 +65,7 @@ pub fn leg(props: &LegProps) -> Html {
         <div
             // `id` changes when the position changes,
             // you cannot use it as a permanent reference for this leg.
-            // id={ make_item_id(pos) }
+            id={ make_item_id(pos) }
             class="leg"
             ondragover={ drag_over }
             ondrop={ drop }
@@ -78,6 +82,7 @@ fn border(color: &str) -> String {
 
 fn bg(color: &str) -> String {
     format!("background-color: {}", color)
+    // format!("background-color: transparent")
 }
 
 fn width(duration: f32) -> String {
@@ -181,8 +186,9 @@ fn construct_run_elements(run_props: &RunProps) -> Vec<yew::virtual_dom::VNode> 
 
 #[function_component(RunComponent)]
 pub fn run(props: &RunProps) -> Html {
+    // let style = to_style(vec![&bg(&props.color), &width(*duration)]);
     html! {
-        <div class="run">
+        <div class="run" id={ make_run_id(props.run_idx) }>
             { for construct_run_elements(props) }
         </div>
     }

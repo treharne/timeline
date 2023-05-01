@@ -1,9 +1,14 @@
 
+use animations::{push_subsequent_jobs, toggle_visible};
+use gloo_utils::document;
+use line_components::{make_item_id, make_run_id};
 use serde::{Deserialize, Serialize};
 use yew::{prelude::*};
 
+
 use gloo_storage::{Storage, LocalStorage};
-use web_sys::{DragEvent};
+use web_sys::{DragEvent, HtmlElement, HtmlCollection};
+use wasm_bindgen::JsCast;
 
 mod line_components;
 use crate::line_components::RunComponent;
@@ -16,6 +21,8 @@ use locations::Location;
 
 mod dnd;
 use dnd::move_job;
+
+mod animations;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Run {
@@ -58,6 +65,9 @@ impl Position {
         Some((self.item_idx - 1) / 2)
     }
 
+    pub fn is_leg(&self) -> bool {
+        self.item_idx % 2 == 0
+    }
 }
 
 pub enum Msg {
@@ -86,7 +96,8 @@ fn new_runs() -> Vec<Run> {
 
 pub struct App {
     state: AppState,
-    drag_item_index: Option<Position>,
+    drag_from_pos: Option<Position>,
+    already_dragging: bool,
 }
 
 // fn set_pos_draggable(pos: &Position, draggable: bool) {
@@ -97,6 +108,8 @@ pub struct App {
 //         }
 //     }
 // }
+
+
 
 impl Component for App {
     type Message = Msg;
@@ -109,29 +122,48 @@ impl Component for App {
 
         App {
             state,
-            drag_item_index: None,
+            drag_from_pos: None,
+            already_dragging: false,
         }
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::DragStart(pos) => {
-                self.drag_item_index = Some(pos);
+                self.drag_from_pos = Some(pos);
+                toggle_visible(&pos, false);
             }
             Msg::Drop(to_pos) => {
-                let Some(from_pos) = self.drag_item_index else { return false };
+                let Some(from_pos) = self.drag_from_pos else { return false };
                 if from_pos == to_pos { return false };
 
                 move_job(from_pos, to_pos, &mut self.state);
+                push_subsequent_jobs(&to_pos, false);
+
+                match self.drag_from_pos {
+                    Some(pos) => toggle_visible(&pos, true),
+                    None => (),
+                }
+
                 LocalStorage::set("timeline_state", &self.state).unwrap();
+
+                self.drag_from_pos = None;
                 return true;
             }
 
-            Msg::DragOver(_pos) => {
-                return false;
+            Msg::DragOver(pos) => {
+                if self.already_dragging { return false };
+
+                self.already_dragging = true;
+                push_subsequent_jobs(&pos, true);
+                
+                // push_subsequent_jobs(&self.drag_from_pos, true);
+                return true;
             }
-            Msg::DragLeave(_pos) => {
-                return false;
+            Msg::DragLeave(pos) => {
+                self.already_dragging = false;
+                push_subsequent_jobs(&pos, false);
+                return true;
             }
             Msg::Reset => {
                 self.state.runs = new_runs();
