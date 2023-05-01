@@ -12,8 +12,16 @@ body {
     /* flex-direction: column; */
     /* gap: 1rem; */
     /* max-width: 250px; */
-    max-width: 100%;
+    /* max-width: 100%; */
     margin: 2rem auto;
+
+    border-top: 1rem solid white;
+    border-bottom: 1rem solid white;
+    /* margin-top: 0.6rem;
+    margin-bottom: 0.6rem; */
+    /* background-color: #ff804d; */
+    /* width: 30px; */
+    height: 1rem;
 }
 
 .job {
@@ -23,8 +31,17 @@ body {
     cursor: grab;
 }
 
-.job:active {
+
+  
+
+.job:active .leg:active {
+    cursor: url('https://www.google.com/intl/en_ALL/mapfiles/closedhand.cur'), all-scroll;
+    cursor: -webkit-grabbing;
+    cursor: -moz-grabbing;
+    cursor: -o-grabbing;
+    cursor: -ms-grabbing;
     cursor: grabbing;
+    /* cursor: grabbing; */
 }
 
 @keyframes slide {

@@ -24,10 +24,14 @@ use dnd::move_job;
 
 mod animations;
 
+type Minutes = usize;
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Run {
     pub jobs: Vec<Job>,
     pub color: String,
+    pub start_time: Minutes,
+    pub end_time: Minutes,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -90,7 +94,10 @@ fn new_jobs(color: &str) -> Vec<Job> {
 
 fn new_runs() -> Vec<Run> {
     let n = 10;
-    (0..n).map(|i| Run { jobs: new_jobs(&get_color(i, n)), color: get_color(i, n) }).collect()
+    (0..n).map(|i| {
+        let jobs = new_jobs(&get_color(i, n));
+        Run { jobs: jobs, color: get_color(i, n), start_time: 0, end_time: 8 * 60 }}
+    ).collect()
 }
 
 
@@ -195,6 +202,8 @@ impl Component for App {
                         run_idx={run_idx}
                         jobs={run.jobs.clone()}
                         color={run.color.clone()}
+                        start_time={run.start_time}
+                        end_time={run.end_time}
                         drag_start={&drag_start}
                         drag_over={&drag_over}
                         drag_leave={&drag_leave}

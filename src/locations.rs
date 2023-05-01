@@ -34,5 +34,5 @@ pub fn haversine_dist(loc1: &Location, loc2: &Location) -> f32 {
 }
 
 pub fn driving_time(job1: &Job, job2: &Job) -> f32 {
-    haversine_dist(&job1.location, &job2.location) / 60.0
+    haversine_dist(&job1.location, &job2.location) / 25.0
 }

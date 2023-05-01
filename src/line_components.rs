@@ -1,6 +1,6 @@
 use yew::prelude::*;
 use gloo_console::log;
-use crate::{Position, RunIdx, Job, locations::driving_time};
+use crate::{Position, RunIdx, Job, locations::driving_time, Minutes};
 
 #[derive(Properties, PartialEq)]
 pub struct JobProps {
@@ -86,7 +86,7 @@ fn bg(color: &str) -> String {
 }
 
 fn width(duration: f32) -> String {
-    let width = (duration * 30.0).round() as u32;
+    let width = (duration * 25.0).round() as u32;
     format!("width: {}px", width)
 }
 
@@ -99,6 +99,8 @@ pub struct RunProps {
     pub run_idx: RunIdx,
     pub jobs: Vec<Job>,
     pub color: String,
+    pub start_time: Minutes,
+    pub end_time: Minutes,
     pub drag_start: Callback<(DragEvent, Position)>,
     pub drag_over: Callback<(DragEvent, Position)>,
     pub drag_leave: Callback<(DragEvent, Position)>,
@@ -186,9 +188,10 @@ fn construct_run_elements(run_props: &RunProps) -> Vec<yew::virtual_dom::VNode> 
 
 #[function_component(RunComponent)]
 pub fn run(props: &RunProps) -> Html {
-    // let style = to_style(vec![&bg(&props.color), &width(*duration)]);
+    let day_length = props.end_time - props.start_time;
+    let style = to_style(vec![&bg(&props.color), &width(day_length as f32)]);
     html! {
-        <div class="run" id={ make_run_id(props.run_idx) }>
+        <div class="run" id={ make_run_id(props.run_idx) } style={ style }>
             { for construct_run_elements(props) }
         </div>
     }
