@@ -1,5 +1,5 @@
 
-use animations::{push_subsequent_jobs, toggle_visible};
+use animations::{push_subsequent_jobs, toggle_visible, push_subsequent_jobs2};
 use gloo_utils::document;
 use gloo_console::log;
 use line_components::{make_item_id, make_run_id};
@@ -40,6 +40,7 @@ pub struct Job {
     pub uid: String,
     pub color: String,
     pub location: Location,
+    pub pushed: bool,
 }
 
 
@@ -84,12 +85,13 @@ pub enum Msg {
 }
 
 fn new_jobs(color: &str) -> Vec<Job> {
-    let n = 20;
+    let n = 10;
     (0..n)
         .map(|n| Job{
-            uid: format!("Job {}", n),
+            uid: format!("{}", n),
             color: color.to_string(),
             location: Location::new_random(),
+            pushed: false,
         }).collect()
 }
 
@@ -100,7 +102,6 @@ fn new_runs() -> Vec<Run> {
         Run { jobs: jobs, color: get_color(i, n), start_time: 0, end_time: 8 * 60 }}
     ).collect()
 }
-
 
 pub struct App {
     state: AppState,
@@ -147,7 +148,8 @@ impl Component for App {
                 if from_pos == to_pos { return false };
 
                 move_job(from_pos, to_pos, &mut self.state);
-                push_subsequent_jobs(&to_pos, false);
+                // push_subsequent_jobs(&to_pos, false);
+                push_subsequent_jobs2(&from_pos, false, &mut self.state.runs);
 
                 match self.drag_from_pos {
                     Some(pos) => toggle_visible(&pos, true),
@@ -162,6 +164,7 @@ impl Component for App {
             }
 
             Msg::DragOver(pos) => {
+                // Should consider using ondragenter instead of dragover... probably way faster
                 
                 match self.dragging_over_pos {
                     Some(dragging_over_pos) => {
@@ -171,16 +174,20 @@ impl Component for App {
                             return false
                         } else if dragging_over_pos.run_idx == pos.run_idx {
                             // over the same run
-                            push_subsequent_jobs(&pos, true);
+                            // push_subsequent_jobs(&pos, true);
+                            push_subsequent_jobs2(&pos, true, &mut self.state.runs);
                         } else {
                             // over a different run
-                            let prev_pos = Position::new(dragging_over_pos.run_idx, 0);
-                            push_subsequent_jobs(&prev_pos, false);
-                            push_subsequent_jobs(&pos, true);
+                            let prev_run_pos = Position::new(dragging_over_pos.run_idx, 0);
+                            // push_subsequent_jobs(&prev_run_pos, false);
+                            // push_subsequent_jobs(&pos, true);
+                            push_subsequent_jobs2(&prev_run_pos, false, &mut self.state.runs);
+                            push_subsequent_jobs2(&pos, true, &mut self.state.runs);
                         }},
-                    None => {
-                        // new run
-                        push_subsequent_jobs(&pos, true);
+                        None => {
+                            // new run
+                            // push_subsequent_jobs(&pos, true);
+                            push_subsequent_jobs2(&pos, true, &mut self.state.runs);
                     }
                 }
 

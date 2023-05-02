@@ -1,8 +1,29 @@
 use gloo_utils::document;
+use gloo_console::log;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlElement;
 
-use crate::{Position, line_components::{make_run_id, make_item_id}};
+use crate::{Position, line_components::{make_run_id, make_item_id}, Run, Job};
+
+pub fn push_subsequent_jobs2(pos: &Position, push: bool, runs: &mut Vec<Run>) -> Option<()> {
+    let run = runs.get_mut(pos.run_idx)?;
+    let jobs: &mut Vec<Job> = run.jobs.as_mut();
+
+    let right_job_idx = match pos.left_job_seq() {
+        Some(seq) => seq + 1,
+        None => 0,
+    };
+    
+    log!(format!("push_subsequent_jobs2: job_idx: {}", right_job_idx));
+    for (idx, job) in jobs.into_iter().enumerate() {
+        if idx < right_job_idx { 
+            job.pushed = false;
+        } else {
+            job.pushed = push;
+        }
+    };
+    Some(())
+}
 
 
 // pub fn pull_subsequent_jobs(pos: &Position, pull: bool) {
@@ -57,15 +78,38 @@ pub fn push_subsequent_jobs(pos: &Position, push: bool) {
         if let Some(run_html_element) = element.dyn_ref::<HtmlElement>() {
             let item_idx = pos.item_idx;
             let n_items = run_html_element.children().length() as usize;
-            for idx in 0..n_items {
+
+            let from = 0.max(item_idx.wrapping_sub(3));
+            let to = n_items.min(item_idx + 3);
+
+
+            // for idx in 0..n_items {
+            for idx in from..to {
                 let pos = Position::new(pos.run_idx, idx);
                 if pos.is_leg() { continue };
-                if idx <= item_idx {
-                    push_item(&pos, false);
-                    continue
-                } 
-                push_item(&pos, push);
+                
+                let el = run_html_element.children().item(idx as u32).unwrap();
+                let html_el = el.dyn_ref::<HtmlElement>();
+                if let Some(html_el) = html_el {
+                    if idx <= item_idx {
+                        set_class(&html_el, "push", false);
+                        // push_item(&pos, false);
+                        continue
+                    } 
+                    set_class(&html_el, "push", push);
+                    // push_item(&pos, push);
+                }
             }
+
+            // for idx in 0..n_items {
+            //     let pos = Position::new(pos.run_idx, idx);
+            //     if pos.is_leg() { continue };
+            //     if idx <= item_idx {
+            //         push_item(&pos, false);
+            //         continue
+            //     } 
+            //     push_item(&pos, push);
+            // }
         }
     }
 }
@@ -82,7 +126,7 @@ fn push_item(pos: &Position, push: bool) {
     let element = get_item_at_pos(pos);
     if let Some(html_element) = element {
         set_class(&html_element, "push", push);
-        set_class(&html_element, "unpush", !push);
+        // set_class(&html_element, "unpush", !push);
     }
 }
 
