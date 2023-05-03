@@ -149,7 +149,7 @@ impl Component for App {
 
                 move_job(from_pos, to_pos, &mut self.state);
                 // push_subsequent_jobs(&to_pos, false);
-                push_subsequent_jobs2(&from_pos, false, &mut self.state.runs);
+                push_subsequent_jobs2(&to_pos, false, &mut self.state.runs);
 
                 match self.drag_from_pos {
                     Some(pos) => toggle_visible(&pos, true),
@@ -165,7 +165,9 @@ impl Component for App {
 
             Msg::DragOver(pos) => {
                 // Should consider using ondragenter instead of dragover... probably way faster
-                
+                // - ondrag needed for cursour "grab" (prevent default or wthaver)
+                // need to calculate when/how to give the "contract" class to a leg...
+                // consider using .leg::hover { ...css... } https://stackoverflow.com/questions/16516793/how-to-reverse-an-animation-on-mouse-out-after-hover
                 match self.dragging_over_pos {
                     Some(dragging_over_pos) => {
                         if pos == dragging_over_pos {

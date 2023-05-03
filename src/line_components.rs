@@ -29,8 +29,8 @@ pub fn make_run_id(run_idx: RunIdx) -> String {
 pub fn job(props: &JobProps) -> Html {
     let JobProps { pos, label, color, duration, pushed, drag_start, drag_over, drag_leave, drop } = props;
     let style = to_style(vec![&border(color), &width(*duration, false)]);
-    let class = if *pushed { "job push" } else { "job" };
-    // let class = "job";
+    // let class = if *pushed { "job push" } else { "job" };
+    let class = "job";
     html! {
         <div
             // `id` changes when the position changes,
@@ -65,8 +65,12 @@ pub struct LegProps {
 #[function_component(LegComponent)]
 pub fn leg(props: &LegProps) -> Html {
     let LegProps { pos, color, duration, stretched, drag_over, drag_leave, drop } = props;
-    let style = to_style(vec![&bg(color), &width(*duration, false)]);
+    // let style = to_style(vec![&bg(color), &width(*duration, false)]);
+    let style = to_style(vec![&width(*duration, false)]);
+    // let style = style + 
+    // let style = to_style(vec![&width(*duration, *stretched)]);
     let class = if *stretched { "leg stretch" } else { "leg" };
+    // let class = if *stretched { "leg stretch" } else { "leg contract" };
     // let class = "leg";
     html! {
         <div
@@ -97,8 +101,11 @@ fn bg(color: &str) -> String {
 
 fn width(duration: f32, stretched: bool) -> String {
     let item_width = (duration * 25.0).round() as u32;
-    let width = if stretched { item_width + 50 } else { item_width };
-    format!("width: {}px", width)
+    // let width = if stretched { item_width + 50 } else { item_width };
+    let vars = format!("; --from-width: {item_width}px; --to-width: {}px", item_width + 50);
+    let ratio = ((item_width + 50) as f32) / (item_width as f32);
+    // let vars = format!("; --scale-ratio: {ratio}");
+    format!("width: {item_width}px") + &vars
 }
 
 fn to_style(styles: Vec<&str>) -> String {
