@@ -29,7 +29,8 @@ pub fn make_run_id(run_idx: RunIdx) -> String {
 pub fn job(props: &JobProps) -> Html {
     let JobProps { pos, label, color, duration, pushed, drag_start, drag_over, drag_leave, drop } = props;
     let style = to_style(vec![&border(color), &width(*duration)]);
-    let class = if *pushed { "job push" } else { "job" };
+    let class = if *pushed { "job push" } 
+                    else { "job" };
     // let class = "job";
     html! {
         <div
