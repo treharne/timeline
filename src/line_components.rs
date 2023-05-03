@@ -1,5 +1,4 @@
 use yew::prelude::*;
-use gloo_console::log;
 use crate::{Position, RunIdx, Job, locations::driving_time, Minutes};
 
 #[derive(Properties, PartialEq)]
@@ -11,6 +10,7 @@ pub struct JobProps {
     pub pushed: bool,
     pub drag_start: Callback<DragEvent>,
     pub drag_over: Callback<DragEvent>,
+    pub drag_enter: Callback<DragEvent>,
     pub drag_leave: Callback<DragEvent>,
     pub drop: Callback<DragEvent>,
 }
@@ -27,26 +27,24 @@ pub fn make_run_id(run_idx: RunIdx) -> String {
 
 #[function_component(JobComponent)]
 pub fn job(props: &JobProps) -> Html {
-    let JobProps { pos, label, color, duration, pushed, drag_start, drag_over, drag_leave, drop } = props;
-    let style = to_style(vec![&border(color), &width(*duration)]);
-    let class = if *pushed { "job push" } 
-                    else { "job" };
-    // let class = "job";
+    let style = to_style(vec![&border(&props.color), &width(props.duration)]);
+    let class = if props.pushed { "job push" } else { "job" };
     html! {
         <div
             // `id` changes when the position changes,
             // you cannot use it as a permanent reference for this job.
-            id={ make_item_id(pos) }
-            uid={ label.clone() }
+            id={ make_item_id(&props.pos) }
+            uid={ props.label.clone() }
             class={ class }
             draggable={ "true" }
-            ondragstart={ drag_start }
-            ondragover={ drag_over }
-            ondrop={ drop }
-            ondragleave={ drag_leave }
+            ondragstart={ &props.drag_start }
+            ondragover={ &props.drag_over }
+            ondragenter={ &props.drag_enter }
+            ondrop={ &props.drop }
+            ondragleave={ &props.drag_leave }
             style={ style }
         >
-            { label }
+            { &props.label }
         </div>
     }
 }
@@ -59,35 +57,32 @@ pub struct LegProps {
     pub stretched: bool,
     pub pushed: bool,
     pub drag_over: Callback<DragEvent>,
+    pub drag_enter: Callback<DragEvent>,
     pub drag_leave: Callback<DragEvent>,
     pub drop: Callback<DragEvent>,
 }
 
 #[function_component(LegComponent)]
 pub fn leg(props: &LegProps) -> Html {
-    let LegProps { pos, color, duration, stretched, pushed, drag_over, drag_leave, drop } = props;
-    // let style = to_style(vec![&bg(color), &width(*duration, false)]);
-    // let style = 
     let style = to_style(vec![
-        &width(*duration), 
-        &leg_scale_ratio(*duration),
+        &width(props.duration), 
+        &leg_scale_ratio(props.duration),
     ]);
-    // let style = style + 
-    // let style = to_style(vec![&width(*duration, *stretched)]);
-    let class = if *stretched { "leg stretch" } 
-                      else if *pushed { "leg push" }
+
+    let class = if props.stretched { "leg stretch" } 
+                      else if props.pushed { "leg push" }
                       else { "leg" };
-    // let class = if *stretched { "leg stretch" } else { "leg contract" };
-    // let class = "leg";
+                      
     html! {
         <div
             // `id` changes when the position changes,
             // you cannot use it as a permanent reference for this leg.
-            id={ make_item_id(pos) }
+            id={ make_item_id(&props.pos) }
             class={ class }
-            ondragover={ drag_over }
-            ondrop={ drop }
-            ondragleave={ drag_leave }
+            ondragover={ &props.drag_over }
+            ondragenter={ &props.drag_enter }
+            ondrop={ &props.drop }
+            ondragleave={ &props.drag_leave }
             style={ style }
         />
     }
@@ -96,9 +91,6 @@ pub fn leg(props: &LegProps) -> Html {
 fn border(color: &str) -> String {
     let size = 5;
     format!("outline: solid {size}px {color}; outline-offset: -{size}px")
-    // format!("border: {size}px solid {color}")
-    // format!("border: {size}px solid {color}; box-sizing: border-box;")
-    // format!("box-shadow:inset 0px 0px 0px {size}px {color}")
 }
 
 fn bg(color: &str) -> String {
@@ -134,6 +126,7 @@ pub struct RunProps {
     pub end_time: Minutes,
     pub drag_start: Callback<(DragEvent, Position)>,
     pub drag_over: Callback<(DragEvent, Position)>,
+    pub drag_enter: Callback<(DragEvent, Position)>,
     pub drag_leave: Callback<(DragEvent, Position)>,
     pub drop: Callback<(DragEvent, Position)>,
 
@@ -143,6 +136,7 @@ pub struct RunProps {
 fn render_job(pos: Position, job: &Job, run_props: &RunProps) -> Html {
     let drag_start = run_props.drag_start.reform(move |drag_event| (drag_event, pos));
     let drag_over = run_props.drag_over.reform(move |drag_event| (drag_event, pos));
+    let drag_enter = run_props.drag_enter.reform(move |drag_event| (drag_event, pos));
     let drag_leave = run_props.drag_leave.reform(move |drag_event| (drag_event, pos));
     let drop = run_props.drop.reform(move |drag_event| (drag_event, pos));
 
@@ -155,6 +149,7 @@ fn render_job(pos: Position, job: &Job, run_props: &RunProps) -> Html {
             pushed={ job.pushed }
             drag_start={ &drag_start }
             drag_over={ &drag_over }
+            drag_enter={ &drag_enter }
             drag_leave={ &drag_leave }
             drop={ &drop }
         />
@@ -163,7 +158,10 @@ fn render_job(pos: Position, job: &Job, run_props: &RunProps) -> Html {
 
 
 fn render_leg(pos: Position, duration: f32, stretched: bool, pushed: bool, run_props: &RunProps) -> Html {
+
+    // closures which close over the "pos"
     let drag_over = run_props.drag_over.reform(move |drag_event| (drag_event, pos));
+    let drag_enter = run_props.drag_enter.reform(move |drag_event| (drag_event, pos));
     let drag_leave = run_props.drag_leave.reform(move |drag_event| (drag_event, pos));
     let drop = run_props.drop.reform(move |drag_event| (drag_event, pos));
 
@@ -175,6 +173,7 @@ fn render_leg(pos: Position, duration: f32, stretched: bool, pushed: bool, run_p
             stretched={ stretched }
             pushed={ pushed }
             drag_over={ &drag_over }
+            drag_enter={ &drag_enter }
             drag_leave={ &drag_leave }
             drop={ &drop }
         />

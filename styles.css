@@ -73,12 +73,6 @@ body {
     animation-fill-mode: forwards;
 } */
 
-/* @keyframes scale_leg {
-    from {transform: scale(0, 0);}
-    to {transform: scale(2rem);}
-
-} */
-
 /* @keyframes scale_leg2 {
     from {
         width: var(--from-width);
@@ -127,30 +121,14 @@ body {
 
 
 .hide {
-    /* visibility: hidden; */
     background-color: #ccc;
-    /* border: 4px solid #47afff */
 }
 
 
 .leg {
-    /* padding: 0 1rem; */
     border-top: 1rem solid white;
     border-bottom: 1rem solid white;
-    /* margin-top: 0.6rem;
-    margin-bottom: 0.6rem; */
-    /* background-color: #ff804d; */
-    /* width: 30px; */
     height: 1rem;
-    /* position: static; */
-    /* transform-origin: left; */
-    background-color: black;
-    /* --scale-ratio: 1.0; */
+    /* background-color: black; */
     will-change: transform;
-
-
-    /* animation : scale_leg3 0.1s reverse;
-    animation-iteration-count : 1;
-    animation-fill-mode: backwards;
-    transform-origin: left; */
 }
