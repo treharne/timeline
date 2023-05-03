@@ -28,9 +28,9 @@ pub fn make_run_id(run_idx: RunIdx) -> String {
 #[function_component(JobComponent)]
 pub fn job(props: &JobProps) -> Html {
     let JobProps { pos, label, color, duration, pushed, drag_start, drag_over, drag_leave, drop } = props;
-    let style = to_style(vec![&border(color), &width(*duration, false)]);
-    // let class = if *pushed { "job push" } else { "job" };
-    let class = "job";
+    let style = to_style(vec![&border(color), &width(*duration)]);
+    let class = if *pushed { "job push" } else { "job" };
+    // let class = "job";
     html! {
         <div
             // `id` changes when the position changes,
@@ -55,8 +55,8 @@ pub struct LegProps {
     pub pos: Position,
     pub color: String,
     pub duration: f32,
-    // pub pushed: bool,
     pub stretched: bool,
+    pub pushed: bool,
     pub drag_over: Callback<DragEvent>,
     pub drag_leave: Callback<DragEvent>,
     pub drop: Callback<DragEvent>,
@@ -64,12 +64,18 @@ pub struct LegProps {
 
 #[function_component(LegComponent)]
 pub fn leg(props: &LegProps) -> Html {
-    let LegProps { pos, color, duration, stretched, drag_over, drag_leave, drop } = props;
+    let LegProps { pos, color, duration, stretched, pushed, drag_over, drag_leave, drop } = props;
     // let style = to_style(vec![&bg(color), &width(*duration, false)]);
-    let style = to_style(vec![&width(*duration, false)]);
+    // let style = 
+    let style = to_style(vec![
+        &width(*duration), 
+        &leg_scale_ratio(*duration),
+    ]);
     // let style = style + 
     // let style = to_style(vec![&width(*duration, *stretched)]);
-    let class = if *stretched { "leg stretch" } else { "leg" };
+    let class = if *stretched { "leg stretch" } 
+                      else if *pushed { "leg push" }
+                      else { "leg" };
     // let class = if *stretched { "leg stretch" } else { "leg contract" };
     // let class = "leg";
     html! {
@@ -99,13 +105,19 @@ fn bg(color: &str) -> String {
     // format!("background-color: transparent")
 }
 
-fn width(duration: f32, stretched: bool) -> String {
-    let item_width = (duration * 25.0).round() as u32;
-    // let width = if stretched { item_width + 50 } else { item_width };
-    let vars = format!("; --from-width: {item_width}px; --to-width: {}px", item_width + 50);
-    let ratio = ((item_width + 50) as f32) / (item_width as f32);
-    // let vars = format!("; --scale-ratio: {ratio}");
-    format!("width: {item_width}px") + &vars
+fn _width(duration: f32) -> u32 {
+    (duration * 25.0).round() as u32
+}
+
+fn width(duration: f32) -> String {
+    let width = _width(duration);
+    format!("width: {width}px")
+}
+
+fn leg_scale_ratio(duration: f32) -> String {
+    let width = _width(duration);
+    let ratio = ((width + 50) as f32) / (width as f32);
+    format!("--scale-ratio: {ratio}")
 }
 
 fn to_style(styles: Vec<&str>) -> String {
@@ -149,7 +161,7 @@ fn render_job(pos: Position, job: &Job, run_props: &RunProps) -> Html {
 }
 
 
-fn render_leg(pos: Position, duration: f32, stretched: bool, run_props: &RunProps) -> Html {
+fn render_leg(pos: Position, duration: f32, stretched: bool, pushed: bool, run_props: &RunProps) -> Html {
     let drag_over = run_props.drag_over.reform(move |drag_event| (drag_event, pos));
     let drag_leave = run_props.drag_leave.reform(move |drag_event| (drag_event, pos));
     let drop = run_props.drop.reform(move |drag_event| (drag_event, pos));
@@ -160,6 +172,7 @@ fn render_leg(pos: Position, duration: f32, stretched: bool, run_props: &RunProp
             color={ run_props.color.clone() }
             duration={ duration }
             stretched={ stretched }
+            pushed={ pushed }
             drag_over={ &drag_over }
             drag_leave={ &drag_leave }
             drop={ &drop }
@@ -177,7 +190,7 @@ fn construct_run_elements(run_props: &RunProps) -> Vec<yew::virtual_dom::VNode> 
         Some(job) => job.pushed,
         None => false,
     };
-    let first_leg = render_leg(pos, 5.0, stretched, run_props);
+    let first_leg = render_leg(pos, 5.0, stretched, false, run_props);
     items.push(first_leg);
 
 
@@ -198,7 +211,7 @@ fn construct_run_elements(run_props: &RunProps) -> Vec<yew::virtual_dom::VNode> 
         item_idx += 1;
         let pos = Position { run_idx, item_idx };
         let stretched = job.pushed && !prev.pushed;
-        items.push(render_leg(pos, leg_duration, stretched, run_props));
+        items.push(render_leg(pos, leg_duration, stretched, prev.pushed, run_props));
         
         item_idx += 1;
         let pos = Position { run_idx, item_idx };
@@ -208,7 +221,11 @@ fn construct_run_elements(run_props: &RunProps) -> Vec<yew::virtual_dom::VNode> 
 
     item_idx += 1;
     let pos = Position { run_idx, item_idx };
-    let last_leg = render_leg(pos, 5.0, false, run_props);
+    let pushed = match prev_job {
+        Some(job) => job.pushed,
+        None => false,
+    };
+    let last_leg = render_leg(pos, 5.0, false, pushed, run_props);
     items.push(last_leg);
     items
 }    
@@ -217,7 +234,7 @@ fn construct_run_elements(run_props: &RunProps) -> Vec<yew::virtual_dom::VNode> 
 #[function_component(RunComponent)]
 pub fn run(props: &RunProps) -> Html {
     let day_length = props.end_time - props.start_time;
-    let style = to_style(vec![&bg(&props.color), &width(day_length as f32, false)]);
+    let style = to_style(vec![&bg(&props.color), &width(day_length as f32)]);
     html! {
         <div class="run" id={ make_run_id(props.run_idx) } style={ style }>
             { for construct_run_elements(props) }
