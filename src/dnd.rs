@@ -1,5 +1,66 @@
-use crate::{Position, AppState, ItemIdx};
+use crate::{Position, AppState, ItemIdx, App, Msg};
 use gloo_console::log;
+use web_sys::DragEvent;
+use yew::{Callback, html::Scope};
+
+#[derive(Clone, Debug)]
+pub struct CallbackMgr {
+    link: Scope<App>,
+    _pos: Option<Position>,
+}
+
+impl PartialEq for CallbackMgr {
+    fn eq(&self, other: &Self) -> bool {
+        self._pos == other._pos
+    }
+}
+
+impl CallbackMgr {
+    pub fn new(link: Scope<App>) -> Self {
+        Self {
+            link: link,
+            _pos: None,
+        }
+    }
+    pub fn with_pos(&self, pos: Position) -> Self {
+        Self {
+            _pos: Some(pos),
+            ..self.clone()
+        }
+    }
+    fn pos(&self) -> Position {
+        self._pos.expect("Cannot create callback without setting pos").clone()
+    }
+    pub fn drag_start(&self) -> Callback<DragEvent> {
+        let pos = self.pos();
+        self.link.callback(move |_: DragEvent| Msg::DragStart(pos))
+    }
+    pub fn drag_over(&self) -> Callback<DragEvent> {
+        let pos = self.pos();
+        self.link.callback(move |event: DragEvent| {
+            event.prevent_default();
+            Msg::DragOver(pos)
+        })
+    }
+    pub fn drag_enter(&self) -> Callback<DragEvent> {
+        let pos = self.pos();
+        self.link.callback(move |event: DragEvent| {
+            event.prevent_default();
+            Msg::DragEnter(pos)
+        })
+    }
+    pub fn drag_leave(&self) -> Callback<DragEvent> {
+        let pos = self.pos();
+        self.link.callback(move |_: DragEvent| Msg::DragLeave(pos))
+    }
+    pub fn drop(&self) -> Callback<DragEvent> {
+        let pos = self.pos();
+        self.link.callback(move |event: DragEvent| {
+            event.prevent_default();
+            Msg::Drop(pos)
+        })
+    }
+}
 
 pub fn move_job(from_pos: Position, to_pos: Position, state: &mut AppState) {
     log!(format!("Moving job from {:?} to {:?}", from_pos, to_pos));

@@ -9,7 +9,7 @@ use gloo_storage::{Storage, LocalStorage};
 use web_sys::{DragEvent};
 
 mod line_components;
-use crate::line_components::RunComponent;
+use crate::{line_components::RunComponent, dnd::CallbackMgr};
 
 mod colors;
 use colors::get_color;
@@ -198,21 +198,7 @@ impl Component for App {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let reset = ctx.link().callback(|_| Msg::Reset);
-        let drag_start = ctx.link().callback(move |(_, pos): (DragEvent, Position)| Msg::DragStart(pos));
-        let drag_over = ctx.link().callback(move |(event, pos): (DragEvent, Position)| {
-            event.prevent_default();
-            Msg::DragOver(pos)
-        });
-        let drag_enter = ctx.link().callback(move |(event, pos): (DragEvent, Position)| {
-            event.prevent_default();
-            Msg::DragEnter(pos)
-        });
-        let drop = ctx.link().callback(move |(event, pos): (DragEvent, Position)| {
-            event.prevent_default();
-            Msg::Drop(pos)
-        });
-        let drag_leave = ctx.link().callback(move |(_, pos): (DragEvent, Position)| Msg::DragLeave(pos));
-
+        let callback_mgr = CallbackMgr::new(ctx.link().clone());
         let toggle_animations = ctx.link().callback(|_| Msg::ToggleAnimations);
 
         html! {
@@ -225,11 +211,7 @@ impl Component for App {
                         start_time={run.start_time}
                         end_time={run.end_time}
                         animate={self.state.animate}
-                        drag_start={&drag_start}
-                        drag_over={&drag_over}
-                        drag_enter={&drag_enter}
-                        drag_leave={&drag_leave}
-                        drop={&drop}
+                        callback_mgr={ callback_mgr.clone() }
                     />
                 })}
                 <br /><br />

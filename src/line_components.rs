@@ -1,5 +1,5 @@
 use yew::prelude::*;
-use crate::{Position, RunIdx, Job, locations::driving_time, Minutes};
+use crate::{Position, RunIdx, Job, locations::driving_time, Minutes, dnd::CallbackMgr};
 
 
 #[derive(Properties, PartialEq)]
@@ -10,11 +10,7 @@ pub struct JobProps {
     pub duration: f32,
     pub pushed: bool,
     pub animate: bool,
-    pub drag_start: Callback<DragEvent>,
-    pub drag_over: Callback<DragEvent>,
-    pub drag_enter: Callback<DragEvent>,
-    pub drag_leave: Callback<DragEvent>,
-    pub drop: Callback<DragEvent>,
+    pub callback_mgr: CallbackMgr,
 }
 
 pub fn make_item_id(pos: &Position) -> String {
@@ -41,6 +37,7 @@ fn job_class(push: bool, animate: bool) -> String {
 pub fn job(props: &JobProps) -> Html {
     let style = to_style(vec![&border(&props.color), &width(props.duration)]);
     let class = job_class(props.pushed, props.animate);
+    // let callback_mgr = props.callback_mgr.with_pos(props.pos);
     html! {
         <div
             // `id` changes when the position changes,
@@ -49,11 +46,12 @@ pub fn job(props: &JobProps) -> Html {
             uid={ props.label.clone() }
             class={ class }
             draggable={ "true" }
-            ondragstart={ &props.drag_start }
-            ondragover={ &props.drag_over }
-            ondragenter={ &props.drag_enter }
-            ondrop={ &props.drop }
-            ondragleave={ &props.drag_leave }
+            ondragstart={ &props.callback_mgr.drag_start() }
+            ondragover={ &props.callback_mgr.drag_over() }
+            ondragenter={ &props.callback_mgr.drag_enter() }
+            ondragleave={ &props.callback_mgr.drag_leave() }
+            ondrop={ &props.callback_mgr.drop() }
+            
             style={ style }
         >
             { &props.label }
@@ -69,10 +67,7 @@ pub struct LegProps {
     pub stretched: bool,
     pub pushed: bool,
     pub animate: bool,
-    pub drag_over: Callback<DragEvent>,
-    pub drag_enter: Callback<DragEvent>,
-    pub drag_leave: Callback<DragEvent>,
-    pub drop: Callback<DragEvent>,
+    pub callback_mgr: CallbackMgr,
 }
 
 fn leg_class(stretch: bool, push: bool, animate:bool) -> String {
@@ -104,10 +99,11 @@ pub fn leg(props: &LegProps) -> Html {
             // you cannot use it as a permanent reference for this leg.
             id={ make_item_id(&props.pos) }
             class={ class }
-            ondragover={ &props.drag_over }
-            ondragenter={ &props.drag_enter }
-            ondrop={ &props.drop }
-            ondragleave={ &props.drag_leave }
+            ondragover={ &props.callback_mgr.drag_over() }
+            ondragenter={ &props.callback_mgr.drag_enter() }
+            ondrop={ &props.callback_mgr.drop() }
+            ondragleave={ &props.callback_mgr.drag_leave() }
+
             style={ style }
         />
     }
@@ -150,21 +146,12 @@ pub struct RunProps {
     pub start_time: Minutes,
     pub end_time: Minutes,
     pub animate: bool,
-    pub drag_start: Callback<(DragEvent, Position)>,
-    pub drag_over: Callback<(DragEvent, Position)>,
-    pub drag_enter: Callback<(DragEvent, Position)>,
-    pub drag_leave: Callback<(DragEvent, Position)>,
-    pub drop: Callback<(DragEvent, Position)>,
-
+    pub callback_mgr: CallbackMgr,
 }
 
 
 fn render_job(pos: Position, job: &Job, animate: bool, run_props: &RunProps) -> Html {
-    let drag_start = run_props.drag_start.reform(move |drag_event| (drag_event, pos));
-    let drag_over = run_props.drag_over.reform(move |drag_event| (drag_event, pos));
-    let drag_enter = run_props.drag_enter.reform(move |drag_event| (drag_event, pos));
-    let drag_leave = run_props.drag_leave.reform(move |drag_event| (drag_event, pos));
-    let drop = run_props.drop.reform(move |drag_event| (drag_event, pos));
+    let callback_mgr = run_props.callback_mgr.with_pos(pos.clone());
 
     html! {
         <JobComponent
@@ -174,23 +161,14 @@ fn render_job(pos: Position, job: &Job, animate: bool, run_props: &RunProps) -> 
             duration={ 1.0 }
             pushed={ job.pushed }
             animate={ animate }
-            drag_start={ &drag_start }
-            drag_over={ &drag_over }
-            drag_enter={ &drag_enter }
-            drag_leave={ &drag_leave }
-            drop={ &drop }
+            callback_mgr={ callback_mgr }
         />
     }
 }
 
 
 fn render_leg(pos: Position, duration: f32, stretched: bool, pushed: bool, animate: bool, run_props: &RunProps) -> Html {
-
-    // closures which close over the "pos"
-    let drag_over = run_props.drag_over.reform(move |drag_event| (drag_event, pos));
-    let drag_enter = run_props.drag_enter.reform(move |drag_event| (drag_event, pos));
-    let drag_leave = run_props.drag_leave.reform(move |drag_event| (drag_event, pos));
-    let drop = run_props.drop.reform(move |drag_event| (drag_event, pos));
+    let callback_mgr = run_props.callback_mgr.with_pos(pos.clone());
 
     html! {
         <LegComponent
@@ -200,10 +178,7 @@ fn render_leg(pos: Position, duration: f32, stretched: bool, pushed: bool, anima
             stretched={ stretched }
             pushed={ pushed }
             animate={ animate }
-            drag_over={ &drag_over }
-            drag_enter={ &drag_enter }
-            drag_leave={ &drag_leave }
-            drop={ &drop }
+            callback_mgr={ callback_mgr }
         />
     }
 }
