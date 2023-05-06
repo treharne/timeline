@@ -43,7 +43,8 @@ pub struct Job {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct AppState {
-    pub runs: Vec<Run>
+    pub runs: Vec<Run>,
+    pub animate: bool,
 }
 
 type RunIdx = usize;
@@ -79,6 +80,7 @@ pub enum Msg {
     DragOver(Position),
     DragEnter(Position),
     DragLeave(Position),
+    ToggleAnimations,
     Reset,
 }
 
@@ -115,7 +117,7 @@ impl Component for App {
 
     fn create(_ctx: &Context<Self>) -> Self {
         let runs = LocalStorage::get("timeline_state").unwrap_or_else(|_| new_runs());
-        let state = AppState { runs };
+        let state = AppState { runs, animate: false };
 
         App {
             state,
@@ -185,6 +187,10 @@ impl Component for App {
                 LocalStorage::delete("timeline_state");
                 return true;
             }
+            Msg::ToggleAnimations => {
+                self.state.animate = !self.state.animate;
+                return true;
+            }
         }
 
         false
@@ -207,6 +213,8 @@ impl Component for App {
         });
         let drag_leave = ctx.link().callback(move |(_, pos): (DragEvent, Position)| Msg::DragLeave(pos));
 
+        let toggle_animations = ctx.link().callback(|_| Msg::ToggleAnimations);
+
         html! {
             <>
                 { for self.state.runs.iter().enumerate().map(move|(run_idx, run)| html! {
@@ -216,6 +224,7 @@ impl Component for App {
                         color={run.color.clone()}
                         start_time={run.start_time}
                         end_time={run.end_time}
+                        animate={self.state.animate}
                         drag_start={&drag_start}
                         drag_over={&drag_over}
                         drag_enter={&drag_enter}
@@ -223,7 +232,15 @@ impl Component for App {
                         drop={&drop}
                     />
                 })}
+                <br /><br />
+                <label class="switch">
+                    {"Animations:"} <input type="checkbox" checked={self.state.animate} onclick={toggle_animations} />
+                    <span class="slider round"></span>
+                </label>
+
+                <br /><br />
                 <button onclick={reset}>{"Reset"}</button>
+
             </>
         }
     }

@@ -1,6 +1,7 @@
 use yew::prelude::*;
 use crate::{Position, RunIdx, Job, locations::driving_time, Minutes};
 
+
 #[derive(Properties, PartialEq)]
 pub struct JobProps {
     pub pos: Position,
@@ -8,6 +9,7 @@ pub struct JobProps {
     pub color: String,
     pub duration: f32,
     pub pushed: bool,
+    pub animate: bool,
     pub drag_start: Callback<DragEvent>,
     pub drag_over: Callback<DragEvent>,
     pub drag_enter: Callback<DragEvent>,
@@ -25,10 +27,20 @@ pub fn make_run_id(run_idx: RunIdx) -> String {
     format!("run{}", run_idx)
 }
 
+fn job_class(push: bool, animate: bool) -> String {
+    if push && animate {
+        "job push-animate"
+    } else if push {
+        "job push"
+    } else {
+        "job"
+    }.to_string()
+}
+
 #[function_component(JobComponent)]
 pub fn job(props: &JobProps) -> Html {
     let style = to_style(vec![&border(&props.color), &width(props.duration)]);
-    let class = if props.pushed { "job push" } else { "job" };
+    let class = job_class(props.pushed, props.animate);
     html! {
         <div
             // `id` changes when the position changes,
@@ -56,10 +68,25 @@ pub struct LegProps {
     pub duration: f32,
     pub stretched: bool,
     pub pushed: bool,
+    pub animate: bool,
     pub drag_over: Callback<DragEvent>,
     pub drag_enter: Callback<DragEvent>,
     pub drag_leave: Callback<DragEvent>,
     pub drop: Callback<DragEvent>,
+}
+
+fn leg_class(stretch: bool, push: bool, animate:bool) -> String {
+    if stretch && animate {
+        "leg stretch-animate"
+    } else if push && animate {
+        "leg push-animate"
+    } else if stretch {
+        "leg stretch"
+    } else if push {
+        "leg push"
+    } else {
+        "leg"
+    }.to_string()
 }
 
 #[function_component(LegComponent)]
@@ -69,9 +96,7 @@ pub fn leg(props: &LegProps) -> Html {
         &leg_scale_ratio(props.duration),
     ]);
 
-    let class = if props.stretched { "leg stretch" } 
-                      else if props.pushed { "leg push" }
-                      else { "leg" };
+    let class = leg_class(props.stretched, props.pushed, props.animate);
                       
     html! {
         <div
@@ -124,6 +149,7 @@ pub struct RunProps {
     pub color: String,
     pub start_time: Minutes,
     pub end_time: Minutes,
+    pub animate: bool,
     pub drag_start: Callback<(DragEvent, Position)>,
     pub drag_over: Callback<(DragEvent, Position)>,
     pub drag_enter: Callback<(DragEvent, Position)>,
@@ -133,7 +159,7 @@ pub struct RunProps {
 }
 
 
-fn render_job(pos: Position, job: &Job, run_props: &RunProps) -> Html {
+fn render_job(pos: Position, job: &Job, animate: bool, run_props: &RunProps) -> Html {
     let drag_start = run_props.drag_start.reform(move |drag_event| (drag_event, pos));
     let drag_over = run_props.drag_over.reform(move |drag_event| (drag_event, pos));
     let drag_enter = run_props.drag_enter.reform(move |drag_event| (drag_event, pos));
@@ -147,6 +173,7 @@ fn render_job(pos: Position, job: &Job, run_props: &RunProps) -> Html {
             color={ job.color.clone() }
             duration={ 1.0 }
             pushed={ job.pushed }
+            animate={ animate }
             drag_start={ &drag_start }
             drag_over={ &drag_over }
             drag_enter={ &drag_enter }
@@ -157,7 +184,7 @@ fn render_job(pos: Position, job: &Job, run_props: &RunProps) -> Html {
 }
 
 
-fn render_leg(pos: Position, duration: f32, stretched: bool, pushed: bool, run_props: &RunProps) -> Html {
+fn render_leg(pos: Position, duration: f32, stretched: bool, pushed: bool, animate: bool, run_props: &RunProps) -> Html {
 
     // closures which close over the "pos"
     let drag_over = run_props.drag_over.reform(move |drag_event| (drag_event, pos));
@@ -172,6 +199,7 @@ fn render_leg(pos: Position, duration: f32, stretched: bool, pushed: bool, run_p
             duration={ duration }
             stretched={ stretched }
             pushed={ pushed }
+            animate={ animate }
             drag_over={ &drag_over }
             drag_enter={ &drag_enter }
             drag_leave={ &drag_leave }
@@ -181,6 +209,7 @@ fn render_leg(pos: Position, duration: f32, stretched: bool, pushed: bool, run_p
 }
 
 fn construct_run_elements(run_props: &RunProps) -> Vec<yew::virtual_dom::VNode> {
+    let animate = run_props.animate;
     let mut items = vec![];
     let run_idx = run_props.run_idx;
     
@@ -190,7 +219,7 @@ fn construct_run_elements(run_props: &RunProps) -> Vec<yew::virtual_dom::VNode> 
         Some(job) => job.pushed,
         None => false,
     };
-    let first_leg = render_leg(pos, 5.0, stretched, false, run_props);
+    let first_leg = render_leg(pos, 5.0, stretched, false, animate, run_props);
     items.push(first_leg);
 
 
@@ -199,7 +228,7 @@ fn construct_run_elements(run_props: &RunProps) -> Vec<yew::virtual_dom::VNode> 
         if prev_job.is_none() {
             item_idx += 1;
             let pos = Position{ run_idx, item_idx};
-            items.push(render_job(pos, &job, run_props));
+            items.push(render_job(pos, &job, animate, run_props));
             prev_job = Some(job);
             continue
         }
@@ -211,11 +240,11 @@ fn construct_run_elements(run_props: &RunProps) -> Vec<yew::virtual_dom::VNode> 
         item_idx += 1;
         let pos = Position { run_idx, item_idx };
         let stretched = job.pushed && !prev.pushed;
-        items.push(render_leg(pos, leg_duration, stretched, prev.pushed, run_props));
+        items.push(render_leg(pos, leg_duration, stretched, prev.pushed, animate, run_props));
         
         item_idx += 1;
         let pos = Position { run_idx, item_idx };
-        items.push(render_job(pos, &job, run_props));
+        items.push(render_job(pos, &job, animate, run_props));
         prev_job = Some(job);
     }
 
@@ -225,7 +254,7 @@ fn construct_run_elements(run_props: &RunProps) -> Vec<yew::virtual_dom::VNode> 
         Some(job) => job.pushed,
         None => false,
     };
-    let last_leg = render_leg(pos, 5.0, false, pushed, run_props);
+    let last_leg = render_leg(pos, 5.0, false, pushed, animate, run_props);
     items.push(last_leg);
     items
 }    
