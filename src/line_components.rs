@@ -9,7 +9,6 @@ pub struct JobProps {
     pub duration: f32,
     pub pushed: bool,
     pub pull: bool,
-    // pub animate: bool,
     pub animation_strategy: Strategy,
     pub callback_mgr: CallbackMgr,
 }
@@ -24,21 +23,7 @@ pub fn make_run_id(run_idx: RunIdx) -> String {
     format!("run{}", run_idx)
 }
 
-// fn job_class(push: bool, pull: bool, animate: bool) -> String {
-//     if push && animate {
-//         "job push-animate"
-//     } else if push {
-//         "job push"
-//     } else if pull && animate {
-//         "job pull-animate"
-//     } else if pull {
-//         "job pull"
-//     } else {
-//         "job"
-//     }.to_string()
-// }
-
-fn job_class2(push: bool, strategy: Strategy) -> String {
+fn job_class(push: bool, strategy: Strategy) -> String {
     let (_, push_approach) = strategy.parts();
     let (push_base, pushed) = push_approach.push_classes();
     "job".to_owned() + &push_base + if push {&pushed} else {""}
@@ -47,9 +32,8 @@ fn job_class2(push: bool, strategy: Strategy) -> String {
 #[function_component(JobComponent)]
 pub fn job(props: &JobProps) -> Html {
     let style = to_style(vec![&border(&props.color), &width(props.duration)]);
-    // let class = job_class(props.pushed, props.pull, props.animate);
-    let class = job_class2(props.pushed, props.animation_strategy.clone());
-    // let callback_mgr = props.callback_mgr.with_pos(props.pos);
+    let class = job_class(props.pushed, props.animation_strategy.clone());
+    
     html! {
         <div
             // `id` changes when the position changes,
@@ -78,26 +62,11 @@ pub struct LegProps {
     pub duration: f32,
     pub stretched: bool,
     pub pushed: bool,
-    // pub animate: bool,
     pub animation_strategy: Strategy,
     pub callback_mgr: CallbackMgr,
 }
 
-// fn leg_class(stretch: bool, push: bool, animate:bool) -> String {
-//     if stretch && animate {
-//         "leg stretch-animate"
-//     } else if push && animate {
-//         "leg push-animate"
-//     } else if stretch {
-//         "leg stretch"
-//     } else if push {
-//         "leg push"
-//     } else {
-//         "leg"
-//     }.to_string()
-// }
-
-fn leg_class2(stretch: bool, push: bool, strategy: Strategy) -> String {
+fn leg_class(stretch: bool, push: bool, strategy: Strategy) -> String {
     let (base, stretched, pushed) = get_classes(strategy);
     "leg".to_owned() + &base + if stretch {&stretched} else if push {&pushed} else {""}
 }
@@ -109,8 +78,7 @@ pub fn leg(props: &LegProps) -> Html {
         &leg_scale_vars(props.duration),
     ]);
 
-    // let class = leg_class(props.stretched, props.pushed, props.animate);
-    let class = leg_class2(props.stretched, props.pushed, props.animation_strategy.clone());
+    let class = leg_class(props.stretched, props.pushed, props.animation_strategy.clone());
                       
     html! {
         <div
@@ -164,7 +132,6 @@ pub struct RunProps {
     pub color: String,
     pub start_time: Minutes,
     pub end_time: Minutes,
-    // pub animate: bool,
     pub animation_strategy: Strategy,
     pub callback_mgr: CallbackMgr,
 }
@@ -181,7 +148,6 @@ fn render_job(pos: Position, job: &Job, run_props: &RunProps) -> Html {
             duration={ 1.0 }
             pushed={ job.pushed }
             pull={ job.pull }
-            // animate={ animate }
             animation_strategy={ run_props.animation_strategy.clone() }
             callback_mgr={ callback_mgr }
         />
@@ -199,7 +165,6 @@ fn render_leg(pos: Position, duration: f32, stretched: bool, pushed: bool, run_p
             duration={ duration }
             stretched={ stretched }
             pushed={ pushed }
-            // animate={ animate }
             animation_strategy={ run_props.animation_strategy.clone() }
             callback_mgr={ callback_mgr }
         />
@@ -207,7 +172,6 @@ fn render_leg(pos: Position, duration: f32, stretched: bool, pushed: bool, run_p
 }
 
 fn construct_run_elements(run_props: &RunProps) -> Vec<yew::virtual_dom::VNode> {
-    // let animate = run_props.animate;
     let mut items = vec![];
     let run_idx = run_props.run_idx;
     

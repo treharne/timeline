@@ -1,5 +1,3 @@
-use std::{str::FromStr, fmt::{Display, Formatter, self}};
-
 use serde::{Serialize, Deserialize};
 use strum::{EnumString, EnumVariantNames};
 
@@ -38,33 +36,6 @@ impl Strategy {
     }
 }
 
-// impl Display for Strategy {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-//         match self {
-//             Self::None => write!(f, "none"),
-//             Self::Transform => write!(f, "transform"),
-//             Self::ScaleAndSlide => write!(f, "scale_and_slide"),
-//             Self::Transition => write!(f, "transition"),
-//         }
-//     }
-// }
-
-// impl FromStr for Strategy {
-//     type Err = String;
-    
-//     fn from_str(s: &str) -> Result<Self, Self::Err> {
-//         match s.to_string() {
-//             Strategy::None::to_string() => Ok(Self::None),
-//             "transform" => Ok(Self::Transform),
-//             "scale_and_slide" => Ok(Self::ScaleAndSlide),
-//             "transition" => Ok(Self::Transition),
-//             _ => Err(format!("{} is not a valid Strategy", s)),
-//         }
-//     }
-// }
-
-
-
 
 impl Stretch {
     pub fn stretch_classes(&self) -> (BaseClass, StretchClass) {
@@ -77,6 +48,7 @@ impl Stretch {
         (vals.0.into(), vals.1.into())
     }
 }
+
 
 impl Push {
     pub fn push_classes(&self) -> (BaseClass, PushClass) {
@@ -102,3 +74,4 @@ pub fn get_classes(strategy: Strategy) -> (BaseClass, StretchClass, PushClass) {
         no_stretch + &push,
     )
 }
+

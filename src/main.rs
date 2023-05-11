@@ -211,19 +211,14 @@ impl Component for App {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let reset = ctx.link().callback(|_| Msg::Reset);
         let callback_mgr = CallbackMgr::new(ctx.link().clone());
-        // let toggle_animations = ctx.link().callback(|_| Msg::ToggleAnimations);
 
-        // let on_input_change = Callback::from(move |event: Event| {
         let on_input_change = ctx.link().callback(move |event: Event| {
-            let target = event.target().unwrap();
+            let Some(target) = event.target() else { return Msg::SetAnimationStrategy(Strategy::None) };
             let value = target.unchecked_into::<HtmlInputElement>().value();
-            let selected = value.parse::<String>().unwrap();
-            log!(selected.clone());
+            let Ok(selected) = value.parse::<String>() else { return Msg::SetAnimationStrategy(Strategy::None) };
             let strategy = Strategy::from_str(&selected).unwrap_or(Strategy::None);
 
-            log!(format!("{:?}", &strategy));
             Msg::SetAnimationStrategy(strategy)
-            // onchange.emit(selected)
         });
 
         html! {
@@ -235,7 +230,6 @@ impl Component for App {
                         color={run.color.clone()}
                         start_time={run.start_time}
                         end_time={run.end_time}
-                        // animate={self.state.animate}
                         animation_strategy={self.state.animation_strategy.clone()}
                         callback_mgr={ callback_mgr.clone() }
                     />
