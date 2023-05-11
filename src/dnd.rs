@@ -22,12 +22,17 @@ impl CallbackMgr {
             _pos: None,
         }
     }
+
     pub fn with_pos(&self, pos: Position) -> Self {
+        // a kind of builder pattern... allows us to add the self.link
+        // in one part of the code, clone the CallbackMgr several times, 
+        // and then add different positions to each one.
         Self {
             _pos: Some(pos),
             ..self.clone()
         }
     }
+
     fn pos(&self) -> Position {
         self._pos.expect("Cannot create callback without setting pos").clone()
     }
@@ -61,6 +66,7 @@ impl CallbackMgr {
         })
     }
 }
+
 
 pub fn move_job(from_pos: Position, to_pos: Position, state: &mut AppState) {
     log!(format!("Moving job from {:?} to {:?}", from_pos, to_pos));

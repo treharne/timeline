@@ -6,21 +6,11 @@ body {
 .run {
     display: flex;
     flex-direction: row;
-    /* justify-content: center; */
     align-items: center;
-    /* gap: 8px; */
-    /* flex-direction: column; */
-    /* gap: 1rem; */
-    /* max-width: 250px; */
-    /* max-width: 100%; */
     margin: 2rem auto;
 
     border-top: 1rem solid white;
     border-bottom: 1rem solid white;
-    /* margin-top: 0.6rem;
-    margin-bottom: 0.6rem; */
-    /* background-color: #ff804d; */
-    /* width: 30px; */
     height: 1rem;
 }
 
@@ -31,6 +21,7 @@ body {
     cursor: grab;
     text-align: center;
     will-change: transform;
+
 }
 
 .job:active .leg:active {
@@ -42,23 +33,16 @@ body {
     cursor: grabbing;
 }
 
-@keyframes slide {
-    from {transform: translateX(0px);}
-    to {transform: translateX(50px);}
+.hide {
+    background-color: #ccc;
 }
 
-/* fast but not animated */
-.push {
-    transform: translateX(50px);
-}
-
-/* slow but beautiful */
-.push-animate {
-    
-    animation: slide 0.1s;
-    animation-delay: 0s;
-    animation-iteration-count: 1;
-    animation-fill-mode: forwards;
+.leg {
+    border-top: 1rem solid white;
+    border-bottom: 1rem solid black;
+    height: 1rem;
+    /* background-color: black; */
+    will-change: transform;
 }
 
 @keyframes scale_leg {
@@ -66,26 +50,61 @@ body {
     to {transform: scale(var(--scale-ratio), 1);}
 }
 
-.stretch {
-    transform: scale(var(--scale-ratio), 1);
-    transform-origin: left;
-}
-
-.stretch-animate {
-    animation : scale_leg 0s;
+.stretch-keyframes {
+    animation : scale_leg 0.2s;
     animation-iteration-count : 1;
     animation-fill-mode: forwards;
     transform-origin: left;
 }
 
-.hide {
-    background-color: #ccc;
+.stretch-transform-base {
+    transform-origin: left;
+    transform: width;
 }
 
-.leg {
-    border-top: 1rem solid white;
-    border-bottom: 1rem solid white;
-    height: 1rem;
-    /* background-color: black; */
-    will-change: transform;
+.stretch-transform {
+    transform-origin: left;
+    transform: width;
+    width: var(--scale-width) !important;
+}
+
+.stretch-transition-base {
+    transform-origin: left;
+    transition: width 0.2s;
+}
+
+.stretch-transition {
+    width: var(--scale-width) !important;
+}
+
+@keyframes slide {
+    from {transform: translateX(0px);}
+    to {transform: translateX(50px);}
+}
+
+.push-keyframes {
+    animation: slide 0.2s;
+    animation-delay: 0s;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+
+}
+
+.push-transform-base {
+    transform: translateX(0px);
+}
+
+.push-transform {
+    transform: translateX(50px);
+}
+
+.push-transition-base {
+    left: 0px;
+    /* transition: left ease 0.2s; */
+    transition: transform;
+    transform-origin: left;
+}
+
+.push-transition {
+    left: 50px;
 }

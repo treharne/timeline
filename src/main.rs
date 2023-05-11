@@ -1,15 +1,19 @@
 
+use std::str::FromStr;
+
 use animations::{toggle_visible, push_subsequent_jobs};
 use gloo_console::log;
 use serde::{Deserialize, Serialize};
+use strum::VariantNames;
+use wasm_bindgen::JsCast;
 use yew::{prelude::*};
 
 
 use gloo_storage::{Storage, LocalStorage};
-use web_sys::{DragEvent};
+use web_sys::{DragEvent, HtmlInputElement};
 
 mod line_components;
-use crate::{line_components::RunComponent, dnd::CallbackMgr};
+use crate::{line_components::RunComponent, dnd::CallbackMgr, animation_strategy::Strategy};
 
 mod colors;
 use colors::get_color;
@@ -21,6 +25,7 @@ mod dnd;
 use dnd::move_job;
 
 mod animations;
+mod animation_strategy;
 
 type Minutes = usize;
 
@@ -38,13 +43,14 @@ pub struct Job {
     pub color: String,
     pub location: Location,
     pub pushed: bool,
+    pub pull: bool,
 }
 
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct AppState {
     pub runs: Vec<Run>,
-    pub animate: bool,
+    pub animation_strategy: Strategy,
 }
 
 type RunIdx = usize;
@@ -80,23 +86,25 @@ pub enum Msg {
     DragOver(Position),
     DragEnter(Position),
     DragLeave(Position),
-    ToggleAnimations,
+    // ToggleAnimations,
+    SetAnimationStrategy(Strategy),
     Reset,
 }
 
 fn new_jobs(color: &str) -> Vec<Job> {
-    let n = 10;
+    let n = 4;
     (0..n)
         .map(|n| Job{
             uid: format!("{}", n),
             color: color.to_string(),
             location: Location::new_random(),
             pushed: false,
+            pull: false,
         }).collect()
 }
 
 fn new_runs() -> Vec<Run> {
-    let n = 10;
+    let n = 3;
     (0..n).map(|i| {
         let jobs = new_jobs(&get_color(i, n));
         Run { jobs: jobs, color: get_color(i, n), start_time: 0, end_time: 3 * 60 }}
@@ -117,7 +125,7 @@ impl Component for App {
 
     fn create(_ctx: &Context<Self>) -> Self {
         let runs = LocalStorage::get("timeline_state").unwrap_or_else(|_| new_runs());
-        let state = AppState { runs, animate: false };
+        let state = AppState { runs, animation_strategy: Strategy::None };
 
         App {
             state,
@@ -187,10 +195,14 @@ impl Component for App {
                 LocalStorage::delete("timeline_state");
                 return true;
             }
-            Msg::ToggleAnimations => {
-                self.state.animate = !self.state.animate;
+            Msg::SetAnimationStrategy(strategy) => {
+                self.state.animation_strategy = strategy;
                 return true;
             }
+            // Msg::ToggleAnimations => {
+            //     self.state.animate = !self.state.animate;
+            //     return true;
+            // }
         }
 
         false
@@ -199,7 +211,20 @@ impl Component for App {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let reset = ctx.link().callback(|_| Msg::Reset);
         let callback_mgr = CallbackMgr::new(ctx.link().clone());
-        let toggle_animations = ctx.link().callback(|_| Msg::ToggleAnimations);
+        // let toggle_animations = ctx.link().callback(|_| Msg::ToggleAnimations);
+
+        // let on_input_change = Callback::from(move |event: Event| {
+        let on_input_change = ctx.link().callback(move |event: Event| {
+            let target = event.target().unwrap();
+            let value = target.unchecked_into::<HtmlInputElement>().value();
+            let selected = value.parse::<String>().unwrap();
+            log!(selected.clone());
+            let strategy = Strategy::from_str(&selected).unwrap_or(Strategy::None);
+
+            log!(format!("{:?}", &strategy));
+            Msg::SetAnimationStrategy(strategy)
+            // onchange.emit(selected)
+        });
 
         html! {
             <>
@@ -210,16 +235,24 @@ impl Component for App {
                         color={run.color.clone()}
                         start_time={run.start_time}
                         end_time={run.end_time}
-                        animate={self.state.animate}
+                        // animate={self.state.animate}
+                        animation_strategy={self.state.animation_strategy.clone()}
                         callback_mgr={ callback_mgr.clone() }
                     />
                 })}
                 <br /><br />
-                <label class="switch">
-                    {"Animations:"} <input type="checkbox" checked={self.state.animate} onclick={toggle_animations} />
-                    <span class="slider round"></span>
-                </label>
-
+                <div class="control">
+                    <label class="radio">
+                        { 
+                            for Strategy::VARIANTS.iter().map(|strategy| html! {
+                                <label>
+                                    <input type="radio" name="anim" onchange={on_input_change.clone()} value={strategy.to_string()} checked={self.state.animation_strategy == Strategy::from_str(strategy).unwrap_or(Strategy::None)} />
+                                    {strategy}
+                                </label>
+                        })}
+                    </label>
+                </div>
+                    
                 <br /><br />
                 <button onclick={reset}>{"Reset"}</button>
 

@@ -18,7 +18,9 @@ pub fn push_subsequent_jobs(pos: &Position, push: bool, runs: &mut Vec<Run>) -> 
     for (idx, job) in jobs.into_iter().enumerate() {
         if idx < right_job_idx { 
             job.pushed = false;
+            job.pull = true;
         } else {
+            job.pull = !push;
             job.pushed = push;
         }
     };
