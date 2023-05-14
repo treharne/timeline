@@ -2,7 +2,6 @@
 use std::str::FromStr;
 
 use animations::{toggle_visible, push_subsequent_jobs};
-use gloo_console::log;
 use serde::{Deserialize, Serialize};
 use strum::VariantNames;
 use wasm_bindgen::JsCast;
@@ -10,7 +9,7 @@ use yew::{prelude::*};
 
 
 use gloo_storage::{Storage, LocalStorage};
-use web_sys::{DragEvent, HtmlInputElement};
+use web_sys::{HtmlInputElement};
 
 mod line_components;
 use crate::{line_components::RunComponent, dnd::CallbackMgr, animation_strategy::Strategy};
@@ -68,7 +67,7 @@ impl Position {
     }
 
     pub fn left_job_seq(&self) -> Option<usize> {
-        if self.item_idx <= 0 {
+        if self.item_idx == 0 {
             // There is no Job to the left of the first leg
             return None
         }
@@ -107,7 +106,7 @@ fn new_runs() -> Vec<Run> {
     let n = 3;
     (0..n).map(|i| {
         let jobs = new_jobs(&get_color(i, n));
-        Run { jobs: jobs, color: get_color(i, n), start_time: 0, end_time: 3 * 60 }}
+        Run { jobs, color: get_color(i, n), start_time: 0, end_time: 3 * 60 }}
     ).collect()
 }
 
@@ -148,9 +147,8 @@ impl Component for App {
                 move_job(from_pos, to_pos, &mut self.state);
                 push_subsequent_jobs(&to_pos, false, &mut self.state.runs);
 
-                match self.drag_from_pos {
-                    Some(pos) => toggle_visible(&pos, true),
-                    None => (),
+                if let Some(pos) = self.drag_from_pos {
+                    toggle_visible(&pos, true)
                 }
                 
                 LocalStorage::set("timeline_state", &self.state).unwrap();

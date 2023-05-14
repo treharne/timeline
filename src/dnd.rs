@@ -17,10 +17,7 @@ impl PartialEq for CallbackMgr {
 
 impl CallbackMgr {
     pub fn new(link: Scope<App>) -> Self {
-        Self {
-            link: link,
-            _pos: None,
-        }
+        Self { link, _pos: None }
     }
 
     pub fn with_pos(&self, pos: Position) -> Self {
@@ -34,7 +31,8 @@ impl CallbackMgr {
     }
 
     fn pos(&self) -> Position {
-        self._pos.expect("Cannot create callback without setting pos").clone()
+        // self._pos.expect("Cannot create callback without setting pos").clone()
+        self._pos.expect("Cannot create callback without setting pos")
     }
     pub fn drag_start(&self) -> Callback<DragEvent> {
         let pos = self.pos();
@@ -84,7 +82,12 @@ pub fn move_job(from_pos: Position, to_pos: Position, state: &mut AppState) {
         runs.get_mut(to_pos.run_idx).unwrap()
     };
     
-    let insert_idx = calc_insertion_idx(&from_pos, &to_pos);
+
+    let insert_idx = match to_run.jobs.len() {
+        0 => 0,
+        _ => calc_insertion_idx(&from_pos, &to_pos)
+    };
+    // let insert_idx = calc_insertion_idx(&from_pos, &to_pos);
     log!(format!("Moving job from_job_seq {:?} insert_seq {:?}", from_job_seq, insert_idx));
     to_run.jobs.insert(insert_idx, job);
 }

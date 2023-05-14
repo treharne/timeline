@@ -1,4 +1,3 @@
-use rand;
 use serde::{Deserialize, Serialize};
 
 use crate::Job;

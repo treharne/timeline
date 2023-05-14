@@ -1,5 +1,5 @@
 # timeline
 
-A WASM Drag & Drop Timeline build using Rust and Yew.
+A WASM Drag & Drop Timeline built using Rust and Yew.
 
 Run using `trunk serve`

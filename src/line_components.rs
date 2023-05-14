@@ -138,11 +138,11 @@ pub struct RunProps {
 
 
 fn render_job(pos: Position, job: &Job, run_props: &RunProps) -> Html {
-    let callback_mgr = run_props.callback_mgr.with_pos(pos.clone());
+    let callback_mgr = run_props.callback_mgr.with_pos(pos);
 
     html! {
         <JobComponent
-            pos={ pos.clone() }
+            pos={ pos }
             label={ job.uid.clone() }
             color={ job.color.clone() }
             duration={ 1.0 }
@@ -156,11 +156,11 @@ fn render_job(pos: Position, job: &Job, run_props: &RunProps) -> Html {
 
 
 fn render_leg(pos: Position, duration: f32, stretched: bool, pushed: bool, run_props: &RunProps) -> Html {
-    let callback_mgr = run_props.callback_mgr.with_pos(pos.clone());
+    let callback_mgr = run_props.callback_mgr.with_pos(pos);
 
     html! {
         <LegComponent
-            pos={ pos.clone() }
+            pos={ pos }
             color={ run_props.color.clone() }
             duration={ duration }
             stretched={ stretched }
@@ -176,26 +176,24 @@ fn construct_run_elements(run_props: &RunProps) -> Vec<yew::virtual_dom::VNode> 
     let run_idx = run_props.run_idx;
     
     let mut item_idx = 0;
-    let pos = Position { run_idx, item_idx};
-    let stretched = match run_props.jobs.first() {
-        Some(job) => job.pushed,
-        None => false,
-    };
+    let pos = Position { run_idx, item_idx };
+    let stretched = run_props.jobs.first().map_or(false, |job| job.pushed);
     let first_leg = render_leg(pos, 5.0, stretched, false, run_props);
     items.push(first_leg);
 
-
-    let mut prev_job: Option<&Job> = None;
+    let mut prev_job = None;
     for job in run_props.jobs.iter() {
-        if prev_job.is_none() {
-            item_idx += 1;
-            let pos = Position{ run_idx, item_idx};
-            items.push(render_job(pos, &job, run_props));
-            prev_job = Some(job);
-            continue
-        }
-
-        let prev = prev_job.unwrap();
+        let prev = match prev_job {
+            Some(j) => j,
+            None => {
+                // It's the first job in the run
+                item_idx += 1;
+                let pos = Position{ run_idx, item_idx };
+                items.push(render_job(pos, job, run_props));
+                prev_job = Some(job);
+                continue
+            }
+        };
 
         let leg_duration = driving_time(prev, job);
         
@@ -206,16 +204,13 @@ fn construct_run_elements(run_props: &RunProps) -> Vec<yew::virtual_dom::VNode> 
         
         item_idx += 1;
         let pos = Position { run_idx, item_idx };
-        items.push(render_job(pos, &job, run_props));
+        items.push(render_job(pos, job, run_props));
         prev_job = Some(job);
     }
 
     item_idx += 1;
     let pos = Position { run_idx, item_idx };
-    let pushed = match prev_job {
-        Some(job) => job.pushed,
-        None => false,
-    };
+    let pushed = prev_job.map_or(false, |job| job.pushed);
     let last_leg = render_leg(pos, 5.0, false, pushed, run_props);
     items.push(last_leg);
     items

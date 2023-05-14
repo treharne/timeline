@@ -3,9 +3,9 @@ use gloo_console::log;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlElement;
 
-use crate::{Position, line_components::{make_run_id, make_item_id}, Run, Job};
+use crate::{Position, line_components::{make_item_id}, Run, Job};
 
-pub fn push_subsequent_jobs(pos: &Position, push: bool, runs: &mut Vec<Run>) -> Option<()> {
+pub fn push_subsequent_jobs(pos: &Position, push: bool, runs: &mut [Run]) -> Option<()> {
     let run = runs.get_mut(pos.run_idx)?;
     let jobs: &mut Vec<Job> = run.jobs.as_mut();
 
@@ -15,7 +15,7 @@ pub fn push_subsequent_jobs(pos: &Position, push: bool, runs: &mut Vec<Run>) -> 
     };
     
     log!(format!("push_subsequent_jobs2: job_idx: {}", right_job_idx));
-    for (idx, job) in jobs.into_iter().enumerate() {
+    for (idx, job) in jobs.iter_mut().enumerate() {
         if idx < right_job_idx { 
             job.pushed = false;
             job.pull = true;

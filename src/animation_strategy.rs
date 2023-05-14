@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 use strum::{EnumString, EnumVariantNames};
 
 
-pub enum CSS {
+pub enum Css {
     None,
     Keyframes,
     Transform,
@@ -10,8 +10,8 @@ pub enum CSS {
 }
 
 
-pub type Push = CSS;
-pub type Stretch = CSS;
+pub type Push = Css;
+pub type Stretch = Css;
 type BaseClass = String;
 type PushClass = String;
 type StretchClass = String;
